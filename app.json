@@ -1,7 +1,7 @@
 {
-  "name": "My App",
-  "slug": "my-app",
-  "scheme": "my-app",
+  "name": "PlantPal",
+  "slug": "plantpal",
+  "scheme": "plantpal",
   "version": "1.0.0",
   "orientation": "portrait",
   "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
   ],
   "android": {
     "icon": "./assets/icon.png",
-    "package": "com.example.myapp",
+    "package": "com.plantpal.app",
     "adaptiveIcon": {
       "foregroundImage": "./assets/icon.png",
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
@@ -27,7 +27,7 @@
   "ios": {
     "icon": "./assets/icon.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.example.myapp"
+    "bundleIdentifier": "com.plantpal.app"
   },
   "web": {
     "favicon": "./assets/icon.png",
@@ -44,7 +44,7 @@
         "image": "./assets/icon.png",
         "imageWidth": 300,
         "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#F5EDDF"
       }
     ],
     [

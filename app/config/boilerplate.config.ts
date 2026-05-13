@@ -11,6 +11,7 @@ export interface OnboardingSlide {
 export interface BoilerplateConfigType {
   app: {
     name: string
+    tagline: string
     supportEmail: string
   }
   onboarding: {
@@ -19,9 +20,14 @@ export interface BoilerplateConfigType {
     requestNotifications: boolean
   }
   paywall: {
+    eyebrow: string
     headline: string
     subtitle: string
-    features: string[]
+    features: { title: string; description: string; icon: string }[]
+    yearlyPrice: string
+    monthlyPrice: string
+    trial: string
+    legal: string
   }
   revenueCat: {
     apiKey: string
@@ -31,27 +37,28 @@ export interface BoilerplateConfigType {
 
 export const BoilerplateConfig: BoilerplateConfigType = {
   app: {
-    name: "My App",
-    supportEmail: "hello@example.com",
+    name: "PlantPal",
+    tagline: "Curiosity, captured.",
+    supportEmail: "hello@plantpal.app",
   },
   onboarding: {
     slides: [
       {
-        title: "Welcome",
-        body: "A short description of the first key benefit of your app.",
+        title: "See what you're looking at.",
+        body: "Snap a photo of any plant, tree, flower or fungus and PlantPal will tell you what it is.",
         image: require("../../assets/onboarding1.png"),
         imageScale: 0.85,
       },
       {
-        title: "Key Feature",
-        body: "Describe what makes your app unique and how it helps users.",
+        title: "Keep a field journal.",
+        body: "Every find is saved as a polaroid memory you can revisit, annotate and share.",
         image: require("../../assets/onboarding2.png"),
         imageScale: 1.05,
         imageOffsetY: 40,
       },
       {
-        title: "Get Started",
-        body: "You're all set. Start using the app and see the results for yourself.",
+        title: "Wander a little further.",
+        body: "Confidence indicators, deeper notes, offline mode — everything you need on the trail.",
         image: require("../../assets/onboarding3.png"),
         imageScale: 0.95,
       },
@@ -59,13 +66,41 @@ export const BoilerplateConfig: BoilerplateConfigType = {
     requestNotifications: false,
   },
   paywall: {
-    headline: "Unlock Everything",
-    subtitle: "Get full access to all features with a subscription",
+    eyebrow: "PLANTPAL PREMIUM",
+    headline: "Wander a little\nfurther.",
+    subtitle:
+      "Unlimited identifications, deeper field notes for every plant, and a journal that follows you offline.",
     features: [
-      "Access all premium features",
-      "Sync across devices",
-      "Priority support",
+      {
+        icon: "leaf",
+        title: "Unlimited identifications",
+        description: "No daily cap. Identify everything you find.",
+      },
+      {
+        icon: "book",
+        title: "Deeper field notes",
+        description: "Folklore, edibility, look-alikes, season.",
+      },
+      {
+        icon: "download",
+        title: "Offline mode",
+        description: "Identify and journal without signal.",
+      },
+      {
+        icon: "export",
+        title: "Export your journal",
+        description: "PDF keepsake or JSON archive, anytime.",
+      },
+      {
+        icon: "heart",
+        title: "Support a small studio",
+        description: "Two people, no ads, no data resold.",
+      },
     ],
+    yearlyPrice: "£24.99 / year",
+    monthlyPrice: "£4.99 / month",
+    trial: "Start 7-day free trial",
+    legal: "Then £24.99 / year. Cancel anytime before the trial ends.",
   },
   revenueCat: {
     apiKey: "YOUR_REVENUECAT_API_KEY",

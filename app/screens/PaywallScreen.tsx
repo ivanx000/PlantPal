@@ -1,47 +1,78 @@
-import { useState } from "react"
+// PlantPal Paywall — "Wander a little further."
+// Typographic hero, a teaser strip of polaroids ("your journal, without limits"),
+// a feature list, Monthly / Yearly plan picker, and a primary CTA.
+
+import { useMemo, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
+  ScrollView,
+  StyleSheet,
   TouchableOpacity,
   View,
-  ViewStyle,
-  TextStyle,
 } from "react-native"
 import type { PurchasesPackage } from "react-native-purchases"
-import { ChevronLeftIcon } from "react-native-heroicons/outline"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { Polaroid } from "@/components/plantpal/Polaroid"
+import {
+  IconBook,
+  IconCheck,
+  IconClose,
+  IconDownload,
+  IconExport,
+  IconHeart,
+  IconLeaf,
+  IconStar,
+} from "@/components/plantpal/PPIcons"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { BoilerplateConfig } from "@/config/boilerplate.config"
 import { usePurchases } from "@/context/PurchasesContext"
 import type { AppStackScreenProps } from "@/navigators/navigationTypes"
-import { useAppTheme } from "@/theme/context"
+import { PP_COLORS, PP_FONT } from "@/theme/plantpal"
 
-const FEATURES = BoilerplateConfig.paywall.features
+const TEASER_POLAROIDS = [
+  { tilt: -7, tint: "rgba(189,132,178,0.55)", caption: "FOXGLOVE" },
+  { tilt: 3, tint: "rgba(232,165,71,0.55)", caption: "CHANTERELLE" },
+  { tilt: -2, tint: "rgba(110,118,180,0.55)", caption: "BLUEBELL" },
+  { tilt: 6, tint: "rgba(120,148,86,0.55)", caption: "ENGLISH OAK" },
+]
 
-function getPeriodSuffix(pkg: PurchasesPackage): string {
-  const type = pkg.packageType as string
-  if (type === "ANNUAL") return "/ yr"
-  if (type === "MONTHLY") return "/ mo"
-  if (type === "WEEKLY") return "/ wk"
-  return ""
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  leaf: IconLeaf,
+  book: IconBook,
+  download: IconDownload,
+  export: IconExport,
+  heart: IconHeart,
 }
 
+type PlanKey = "yearly" | "monthly"
+
 export function PaywallScreen({ navigation }: AppStackScreenProps<"Paywall">) {
-  const { theme: { colors, spacing } } = useAppTheme()
   const { offerings, purchasePackage, restorePurchases, isLoading } = usePurchases()
-  const [purchasing, setPurchasing] = useState(false)
+  const insets = useSafeAreaInsets()
 
   const packages = offerings?.current?.availablePackages ?? []
-  const sortedPackages = [...packages].sort((a, b) => {
-    const order = ["MONTHLY", "ANNUAL", "WEEKLY"]
-    return order.indexOf(a.packageType as string) - order.indexOf(b.packageType as string)
-  })
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const selectedPackage = sortedPackages.find(p => p.identifier === selectedId) ?? sortedPackages[0]
+  const annual = packages.find((p) => (p.packageType as string) === "ANNUAL")
+  const monthly = packages.find((p) => (p.packageType as string) === "MONTHLY")
+
+  const [selected, setSelected] = useState<PlanKey>("yearly")
+  const [purchasing, setPurchasing] = useState(false)
+
+  const selectedPackage = useMemo<PurchasesPackage | undefined>(
+    () => (selected === "yearly" ? annual : monthly),
+    [selected, annual, monthly],
+  )
 
   const handlePurchase = async () => {
-    if (!selectedPackage) return
+    if (!selectedPackage) {
+      Alert.alert(
+        "Coming soon",
+        "Subscription packages aren't configured yet. Connect RevenueCat to enable.",
+      )
+      return
+    }
     setPurchasing(true)
     const success = await purchasePackage(selectedPackage)
     setPurchasing(false)
@@ -53,9 +84,7 @@ export function PaywallScreen({ navigation }: AppStackScreenProps<"Paywall">) {
   }
 
   const handleRestore = async () => {
-    setPurchasing(true)
     const success = await restorePurchases()
-    setPurchasing(false)
     if (success) {
       navigation.reset({ index: 0, routes: [{ name: "Main" }] })
     } else {
@@ -65,292 +94,429 @@ export function PaywallScreen({ navigation }: AppStackScreenProps<"Paywall">) {
 
   if (isLoading) {
     return (
-      <Screen preset="fixed" safeAreaEdges={["bottom"]} systemBarStyle="dark" contentContainerStyle={{ flex: 1, justifyContent: "flex-start" }}>
-        <View style={$centered}>
-          <ActivityIndicator size="large" color={colors.tint} />
+      <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} systemBarStyle="dark" backgroundColor={PP_COLORS.parchment}>
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={PP_COLORS.tealDeep} />
         </View>
       </Screen>
     )
   }
 
-  return (
-    <Screen preset="scroll" safeAreaEdges={["top", "bottom"]} systemBarStyle="dark">
-      <View style={[$root, { paddingHorizontal: spacing.md, paddingTop: spacing.md }]}>
-        {/* Back button */}
-        <TouchableOpacity
-          style={$backBtn}
-          onPress={() =>
-            navigation.canGoBack()
-              ? navigation.goBack()
-              : navigation.reset({ index: 0, routes: [{ name: "Onboarding", params: { initialStep: 2 } }] })
-          }
-          activeOpacity={0.7}
-          hitSlop={8}
-        >
-          <ChevronLeftIcon size={18} color={colors.tint} strokeWidth={2} />
-          <Text style={[$backText, { color: colors.tint }]}>Back</Text>
-        </TouchableOpacity>
+  const yearlyPrice = annual?.product.priceString
+    ? `${annual.product.priceString} / year`
+    : BoilerplateConfig.paywall.yearlyPrice
+  const monthlyPrice = monthly?.product.priceString
+    ? `${monthly.product.priceString} / month`
+    : BoilerplateConfig.paywall.monthlyPrice
 
-        {/* Hero */}
-        <View style={$hero}>
-          <Text style={[$heroTitle, { color: colors.text }]}>{BoilerplateConfig.paywall.headline}</Text>
-          <Text style={[$heroSub, { color: colors.textDim }]}>{BoilerplateConfig.paywall.subtitle}</Text>
+  return (
+    <Screen preset="fixed" safeAreaEdges={["top"]} systemBarStyle="dark" backgroundColor={PP_COLORS.parchment}>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: PP_COLORS.parchment }}
+        contentContainerStyle={{ paddingBottom: 160 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top bar */}
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.canGoBack()
+                ? navigation.goBack()
+                : navigation.reset({ index: 0, routes: [{ name: "Main" }] })
+            }
+            style={styles.iconBtn}
+            activeOpacity={0.7}
+            hitSlop={8}
+          >
+            <IconClose size={18} color={PP_COLORS.charcoal} strokeWidth={1.7} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleRestore} activeOpacity={0.7} hitSlop={8}>
+            <Text style={styles.restore}>Restore</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Hero — eyebrow + headline + subtitle */}
+        <View style={styles.hero}>
+          <View style={styles.eyebrowChip}>
+            <IconStar size={10} color={PP_COLORS.pollen} />
+            <Text style={styles.eyebrowText}>{BoilerplateConfig.paywall.eyebrow}</Text>
+          </View>
+          <Text style={styles.heroTitle}>{BoilerplateConfig.paywall.headline}</Text>
+          <Text style={styles.heroSub}>{BoilerplateConfig.paywall.subtitle}</Text>
+        </View>
+
+        {/* Teaser polaroid strip */}
+        <View style={styles.teaserStrip}>
+          <View style={styles.teaserRow}>
+            {TEASER_POLAROIDS.map((p, i) => (
+              <View key={p.caption} style={{ marginHorizontal: -10, zIndex: i + 1 }}>
+                <Polaroid
+                  tilt={p.tilt}
+                  tint={p.tint}
+                  width={78}
+                  photoAspect={1}
+                  padding={6}
+                  captionPadding={14}
+                  caption={
+                    <Text style={styles.teaserCaption} numberOfLines={1}>
+                      {p.caption}
+                    </Text>
+                  }
+                />
+              </View>
+            ))}
+          </View>
+          <Text style={styles.teaserLine}>your journal, without limits</Text>
         </View>
 
         {/* Feature list */}
-        <View style={[$featureCard, { backgroundColor: colors.card }]}>
-          {FEATURES.map((f) => (
-            <View key={f} style={$featureRow}>
-              <Text style={[$checkmark, { color: colors.tint }]}>✓</Text>
-              <Text style={[$featureText, { color: colors.text }]}>{f}</Text>
-            </View>
-          ))}
+        <View style={styles.features}>
+          {BoilerplateConfig.paywall.features.map((f, idx) => {
+            const Icon = ICON_MAP[f.icon] ?? IconLeaf
+            const isLast = idx === BoilerplateConfig.paywall.features.length - 1
+            return (
+              <View
+                key={f.title}
+                style={[
+                  styles.featureRow,
+                  !isLast && {
+                    borderBottomWidth: 0.5,
+                    borderBottomColor: PP_COLORS.birchHairline,
+                  },
+                ]}
+              >
+                <View style={styles.featureIcon}>
+                  <Icon size={18} color={PP_COLORS.tealDeep} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.featureTitle}>{f.title}</Text>
+                  <Text style={styles.featureDesc}>{f.description}</Text>
+                </View>
+              </View>
+            )
+          })}
         </View>
 
-        {/* Package selection */}
-        {packages.length > 0 ? (
-          <View style={$packages}>
-            {sortedPackages.map((pkg: PurchasesPackage) => {
-              const isSelected = pkg.identifier === selectedPackage?.identifier
-              const isAnnual = (pkg.packageType as string) === "ANNUAL"
-              const suffix = getPeriodSuffix(pkg)
-              return (
-                <TouchableOpacity
-                  key={pkg.identifier}
-                  style={[
-                    $packageRow,
-                    {
-                      backgroundColor: isSelected ? colors.tint + "18" : colors.card,
-                      borderColor: isSelected ? colors.tint : colors.border,
-                      borderWidth: isSelected ? 1.5 : 1,
-                    },
-                  ]}
-                  onPress={() => setSelectedId(pkg.identifier)}
-                  activeOpacity={0.8}
-                >
-                  <View style={$packageLeft}>
-                    <View style={$packageTitleRow}>
-                      <Text style={[$packageTitle, { color: colors.text }]}>
-                        {(pkg.packageType as string) === "ANNUAL" ? "Yearly" : (pkg.packageType as string) === "MONTHLY" ? "Monthly" : pkg.packageType}
-                      </Text>
-                      {isAnnual && (
-                        <View style={[$bestValueBadge, { backgroundColor: colors.tint + "25" }]}>
-                          <Text style={[$bestValueText, { color: colors.tint }]}>Best value</Text>
-                        </View>
-                      )}
-                    </View>
-                    {pkg.product.introPrice && (
-                      <Text style={[$packageTrial, { color: colors.textDim }]}>
-                        {pkg.product.introPrice.periodNumberOfUnits}{" "}
-                        {pkg.product.introPrice.periodUnit.toLowerCase()} free
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={[$packagePrice, { color: colors.text }]}>
-                    {pkg.product.priceString}
-                    {suffix ? ` ${suffix}` : ""}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
-        ) : (
-          <View style={[$packageRow, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[$featureText, { color: colors.textDim }]}>
-              No offerings available. Check back soon.
-            </Text>
-          </View>
-        )}
+        {/* Plan picker */}
+        <View style={styles.plans}>
+          <PlanOption
+            label="Yearly"
+            price={yearlyPrice}
+            sub="That's £2.08 a month"
+            badge="Save 58%"
+            selected={selected === "yearly"}
+            onPress={() => setSelected("yearly")}
+          />
+          <PlanOption
+            label="Monthly"
+            price={monthlyPrice}
+            sub="Cancel anytime"
+            selected={selected === "monthly"}
+            onPress={() => setSelected("monthly")}
+          />
+        </View>
+      </ScrollView>
 
-        {/* CTA */}
+      {/* Bottom CTA */}
+      <View
+        style={[
+          styles.ctaBar,
+          { paddingBottom: Math.max(insets.bottom, 18) },
+        ]}
+      >
         <TouchableOpacity
-          style={[$cta, { backgroundColor: colors.tint, opacity: purchasing ? 0.6 : 1 }]}
+          activeOpacity={0.9}
+          style={[styles.cta, purchasing && { opacity: 0.6 }]}
           onPress={handlePurchase}
-          activeOpacity={0.85}
-          disabled={purchasing || packages.length === 0}
+          disabled={purchasing}
         >
           {purchasing ? (
-            <ActivityIndicator color={colors.background} />
+            <ActivityIndicator color={PP_COLORS.parchment} />
           ) : (
-            <Text style={[$ctaText, { color: colors.background }]}>
-              {selectedPackage?.product.introPrice ? "Start free trial" : "Subscribe"}
-            </Text>
+            <Text style={styles.ctaText}>{BoilerplateConfig.paywall.trial}</Text>
           )}
         </TouchableOpacity>
-
-        <TouchableOpacity style={$restoreBtn} onPress={handleRestore} disabled={purchasing}>
-          <Text style={[$restoreText, { color: colors.textDim }]}>Restore purchases</Text>
-        </TouchableOpacity>
-
-        {/* Legal */}
-        <View style={$legal}>
-          <Text style={[$legalText, { color: colors.textDim }]}>
-            Subscription auto-renews unless cancelled at least 24 hours before the end of the
-            current period.
-          </Text>
-          <View style={$legalLinks}>
-            <TouchableOpacity onPress={() => navigation.navigate("Legal", { type: "privacy" })}>
-              <Text style={[$legalLink, { color: colors.textDim }]}>Privacy Policy</Text>
-            </TouchableOpacity>
-            <Text style={[$legalText, { color: colors.textDim }]}> · </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Legal", { type: "terms" })}>
-              <Text style={[$legalLink, { color: colors.textDim }]}>Terms of Service</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <Text style={styles.legal}>{BoilerplateConfig.paywall.legal}</Text>
       </View>
     </Screen>
   )
 }
 
-const $backBtn: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 4,
+function PlanOption({
+  label,
+  price,
+  sub,
+  badge,
+  selected,
+  onPress,
+}: {
+  label: string
+  price: string
+  sub: string
+  badge?: string
+  selected: boolean
+  onPress: () => void
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[
+        styles.plan,
+        selected ? styles.planSelected : styles.planUnselected,
+      ]}
+    >
+      <View
+        style={[
+          styles.radio,
+          selected ? styles.radioSelected : styles.radioUnselected,
+        ]}
+      >
+        {selected ? <IconCheck size={12} color={PP_COLORS.parchment} strokeWidth={3} /> : null}
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={styles.planLabel}>{label}</Text>
+        <Text style={styles.planSub}>{sub}</Text>
+      </View>
+      <Text style={styles.planPrice}>{price}</Text>
+      {badge ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge.toUpperCase()}</Text>
+        </View>
+      ) : null}
+    </TouchableOpacity>
+  )
 }
 
-const $backText: TextStyle = {
-  fontSize: 16,
-  fontWeight: "500",
-}
-
-const $centered: ViewStyle = {
-  flex: 1,
-  alignItems: "center",
-  justifyContent: "center",
-}
-
-const $root: ViewStyle = {
-  gap: 20,
-  paddingBottom: 16,
-}
-
-const $hero: ViewStyle = {
-  alignItems: "center",
-  gap: 12,
-}
-
-const $heroTitle: TextStyle = {
-  fontSize: 28,
-  lineHeight: 40,
-  fontWeight: "700",
-  textAlign: "center",
-}
-
-const $heroSub: TextStyle = {
-  fontSize: 15,
-  textAlign: "center",
-  lineHeight: 22,
-}
-
-const $featureCard: ViewStyle = {
-  borderRadius: 16,
-  padding: 16,
-  gap: 12,
-}
-
-const $featureRow: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 10,
-}
-
-const $checkmark: TextStyle = {
-  fontSize: 16,
-  fontWeight: "700",
-  width: 20,
-}
-
-const $featureText: TextStyle = {
-  fontSize: 15,
-  flex: 1,
-}
-
-const $packages: ViewStyle = {
-  gap: 10,
-}
-
-const $packageRow: ViewStyle = {
-  borderRadius: 14,
-  padding: 14,
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-}
-
-const $packageLeft: ViewStyle = {
-  gap: 4,
-  flex: 1,
-}
-
-const $packageTitleRow: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 8,
-}
-
-const $packageTitle: TextStyle = {
-  fontSize: 16,
-  fontWeight: "600",
-}
-
-const $bestValueBadge: ViewStyle = {
-  borderRadius: 999,
-  paddingHorizontal: 8,
-  paddingVertical: 2,
-}
-
-const $bestValueText: TextStyle = {
-  fontSize: 12,
-  fontWeight: "600",
-}
-
-const $packageTrial: TextStyle = {
-  fontSize: 13,
-}
-
-const $packagePrice: TextStyle = {
-  fontSize: 15,
-  fontWeight: "700",
-}
-
-const $cta: ViewStyle = {
-  borderRadius: 999,
-  paddingVertical: 16,
-  alignItems: "center",
-}
-
-const $ctaText: TextStyle = {
-  fontSize: 16,
-  fontWeight: "700",
-}
-
-const $restoreBtn: ViewStyle = {
-  alignItems: "center",
-  paddingVertical: 4,
-}
-
-const $restoreText: TextStyle = {
-  fontSize: 14,
-}
-
-const $legal: ViewStyle = {
-  gap: 4,
-  paddingTop: 4,
-}
-
-const $legalText: TextStyle = {
-  fontSize: 12,
-  lineHeight: 18,
-  textAlign: "center",
-}
-
-const $legalLinks: ViewStyle = {
-  flexDirection: "row",
-  justifyContent: "center",
-}
-
-const $legalLink: TextStyle = {
-  fontSize: 12,
-  textDecorationLine: "underline",
-}
+const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: "center", justifyContent: "center" },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  restore: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 12.5,
+    color: PP_COLORS.stone,
+    letterSpacing: 0.1,
+    textDecorationLine: "underline",
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+  },
+  hero: { paddingHorizontal: 28, paddingTop: 20 },
+  eyebrowChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(31,78,74,0.06)",
+    borderWidth: 0.5,
+    borderColor: "rgba(31,78,74,0.18)",
+  },
+  eyebrowText: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 11,
+    color: PP_COLORS.tealDeep,
+    letterSpacing: 0.4,
+    marginLeft: 4,
+  },
+  heroTitle: {
+    marginTop: 16,
+    fontFamily: PP_FONT.displayRegular,
+    fontSize: 48,
+    lineHeight: 52,
+    letterSpacing: -0.9,
+    color: PP_COLORS.ink,
+  },
+  heroSub: {
+    marginTop: 14,
+    fontFamily: PP_FONT.serifRegular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: PP_COLORS.charcoal,
+    maxWidth: 320,
+  },
+  teaserStrip: {
+    marginTop: 26,
+    paddingVertical: 14,
+    backgroundColor: "rgba(234,217,189,0.4)",
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: PP_COLORS.birchSoft,
+  },
+  teaserRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  teaserCaption: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 7.5,
+    color: PP_COLORS.stone,
+    letterSpacing: 0.6,
+    textAlign: "center",
+  },
+  teaserLine: {
+    marginTop: 10,
+    textAlign: "center",
+    fontFamily: PP_FONT.serifItalic,
+    fontStyle: "italic",
+    fontSize: 12.5,
+    color: PP_COLORS.stone,
+  },
+  features: { paddingHorizontal: 28, paddingTop: 24 },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    paddingVertical: 12,
+  },
+  featureIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: PP_COLORS.paleTeal,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  featureTitle: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 14.5,
+    color: PP_COLORS.ink,
+    letterSpacing: 0.1,
+  },
+  featureDesc: {
+    marginTop: 2,
+    fontFamily: PP_FONT.uiRegular,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: PP_COLORS.charcoal,
+  },
+  plans: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    gap: 8,
+  },
+  plan: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginBottom: 8,
+  },
+  planSelected: {
+    backgroundColor: PP_COLORS.parchmentSoft,
+    borderWidth: 1.5,
+    borderColor: PP_COLORS.tealDeep,
+  },
+  planUnselected: {
+    borderWidth: 0.5,
+    borderColor: PP_COLORS.birchBorderStrong,
+  },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  radioSelected: {
+    borderWidth: 1.5,
+    borderColor: PP_COLORS.tealDeep,
+    backgroundColor: PP_COLORS.tealDeep,
+  },
+  radioUnselected: {
+    borderWidth: 1,
+    borderColor: "rgba(140,110,70,0.4)",
+  },
+  planLabel: {
+    fontFamily: PP_FONT.displayRegular,
+    fontSize: 18,
+    lineHeight: 20,
+    color: PP_COLORS.ink,
+    letterSpacing: -0.3,
+  },
+  planSub: {
+    marginTop: 2,
+    fontFamily: PP_FONT.uiRegular,
+    fontSize: 12.5,
+    color: PP_COLORS.stone,
+  },
+  planPrice: {
+    textAlign: "right",
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 14,
+    color: PP_COLORS.ink,
+    marginLeft: 8,
+  },
+  badge: {
+    position: "absolute",
+    top: -10,
+    right: 14,
+    backgroundColor: PP_COLORS.pollen,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+  },
+  badgeText: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 10.5,
+    color: "#5C3F10",
+    letterSpacing: 0.4,
+  },
+  ctaBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    backgroundColor: PP_COLORS.parchment,
+    borderTopWidth: 0.5,
+    borderTopColor: PP_COLORS.birchSoft,
+  },
+  cta: {
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: PP_COLORS.tealDeep,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: PP_COLORS.tealDeep,
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  ctaText: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 15.5,
+    color: PP_COLORS.parchment,
+    letterSpacing: 0.1,
+  },
+  legal: {
+    marginTop: 10,
+    textAlign: "center",
+    fontFamily: PP_FONT.uiRegular,
+    fontSize: 11.5,
+    color: PP_COLORS.stone,
+    letterSpacing: 0.1,
+  },
+})

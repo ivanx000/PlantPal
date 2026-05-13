@@ -1,7 +1,8 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
-import { HomeScreen } from "@/screens/HomeScreen"
+import { DashboardScreen } from "@/screens/DashboardScreen"
 import { LegalScreen } from "@/screens/LegalScreen"
+import { ResultScreen } from "@/screens/ResultScreen"
 import { SettingsScreen } from "@/screens/SettingsScreen"
 import { useAppTheme } from "@/theme/context"
 
@@ -20,7 +21,8 @@ export function MainNavigator() {
       }}
       initialRouteName="Home"
     >
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Home" component={DashboardScreen} />
+      <Stack.Screen name="Result" component={ResultScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Legal" component={LegalScreen} />
     </Stack.Navigator>

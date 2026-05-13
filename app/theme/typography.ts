@@ -1,58 +1,75 @@
-// TODO: write documentation about fonts and typography along with guides on how to add custom fonts in own
-// markdown file and add links from here
+// PlantPal typography
+// - Instrument Serif: plant common names (the discovery moment)
+// - Fraunces (italic): Latin binomials and body serif accents
+// - Inter: all UI text
 
-import { Platform } from "react-native"
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from "@expo-google-fonts/inter"
+import {
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_500Medium,
+  Fraunces_500Medium_Italic,
+} from "@expo-google-fonts/fraunces"
+import {
+  InstrumentSerif_400Regular,
+  InstrumentSerif_400Regular_Italic,
+} from "@expo-google-fonts/instrument-serif"
 
-export const customFontsToLoad = {}
+export const customFontsToLoad = {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_500Medium,
+  Fraunces_500Medium_Italic,
+  InstrumentSerif_400Regular,
+  InstrumentSerif_400Regular_Italic,
+}
 
 const fonts = {
+  // Inter — UI / body
+  inter: {
+    light: "Inter_400Regular",
+    normal: "Inter_400Regular",
+    medium: "Inter_500Medium",
+    semiBold: "Inter_600SemiBold",
+    bold: "Inter_600SemiBold",
+  },
+  // Fraunces — Latin binomials, italic accents, secondary serif
+  fraunces: {
+    normal: "Fraunces_400Regular",
+    italic: "Fraunces_400Regular_Italic",
+    medium: "Fraunces_500Medium",
+    mediumItalic: "Fraunces_500Medium_Italic",
+  },
+  // Instrument Serif — display: plant common names, headings
+  instrumentSerif: {
+    normal: "InstrumentSerif_400Regular",
+    italic: "InstrumentSerif_400Regular_Italic",
+  },
+  // Legacy boilerplate — kept so unrelated components don't break
   spaceGrotesk: {
-    // Using system font (SF Pro on iOS, Roboto on Android) via fontWeight.
     light: "300",
     normal: "400",
     medium: "500",
     semiBold: "600",
     bold: "700",
   },
-  helveticaNeue: {
-    // iOS only font.
-    thin: "HelveticaNeue-Thin",
-    light: "HelveticaNeue-Light",
-    normal: "Helvetica Neue",
-    medium: "HelveticaNeue-Medium",
-  },
-  courier: {
-    // iOS only font.
-    normal: "Courier",
-  },
-  sansSerif: {
-    // Android only font.
-    thin: "sans-serif-thin",
-    light: "sans-serif-light",
-    normal: "sans-serif",
-    medium: "sans-serif-medium",
-  },
-  monospace: {
-    // Android only font.
-    normal: "monospace",
-  },
 }
 
 export const typography = {
-  /**
-   * The fonts are available to use, but prefer using the semantic name.
-   */
   fonts,
-  /**
-   * The primary font. Used in most places.
-   */
-  primary: fonts.spaceGrotesk,
-  /**
-   * An alternate font used for perhaps titles and stuff.
-   */
-  secondary: Platform.select({ ios: fonts.helveticaNeue, android: fonts.sansSerif }),
-  /**
-   * Lets get fancy with a monospace font!
-   */
-  code: Platform.select({ ios: fonts.courier, android: fonts.monospace }),
+  /** Primary UI font — Inter */
+  primary: fonts.inter,
+  /** Secondary serif — Fraunces (used italicised for binomials) */
+  secondary: fonts.fraunces,
+  /** Display serif — Instrument Serif, for plant names and big headings */
+  display: fonts.instrumentSerif,
+  /** Code/monospace placeholder */
+  code: fonts.inter,
 }

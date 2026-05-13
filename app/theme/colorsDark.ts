@@ -36,6 +36,7 @@ export const colors = {
   transparent: "rgba(0, 0, 0, 0)",
   text: palette.neutral100,
   textDim: palette.neutral400,
+  textMuted: palette.neutral500,
   background: palette.neutral900,
   card: palette.neutral800,
   cardElevated: palette.neutral700,

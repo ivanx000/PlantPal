@@ -262,7 +262,7 @@ const $inputWrapperStyle: ThemedStyle<ViewStyle> = ({ colors }) => ({
 const $inputStyle: ThemedStyle<TextStyle> = ({ colors, typography, spacing }) => ({
   flex: 1,
   alignSelf: "stretch",
-  fontWeight: typography.primary.normal,
+  fontFamily: typography.primary.normal,
   color: colors.text,
   fontSize: 16,
   height: 24,

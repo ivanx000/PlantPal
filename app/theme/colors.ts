@@ -1,67 +1,88 @@
+// PlantPal palette — calm field-journal aesthetic.
+// See plantpal/chats/chat1.md for design rationale.
+
 const palette = {
-  // Warm Paper palette (V1)
-  warmBg:           '#FAF9F6',
-  warmSurface:      '#FFFFFF',
-  warmSurfaceAlt:   '#F4F2ED',
-  warmBorder:       '#E5E0D5',
-  warmBorderSub:    '#EDE9E2',
-  warmText:         '#1A1714',
-  warmTextDim:      '#8A7F72',
-  warmTextFaint:    '#A8A09A',
-  warmAccent:       '#0A7A40',
-  warmAccentBg:     '#E6F4EC',
-  warmAccentBorder: '#B0D4BF',
-  warmDanger:       '#C0392B',
-  warmDangerBg:     '#FDF1F0',
+  // Brand — teal
+  tealDeep:   "#1F4E4A", // primary buttons, key actions, logo
+  eucalyptus: "#2C7268", // hover / active
+  sage:       "#5FA396", // secondary, confidence-low
+  mist:       "#A8CFC5", // subtle highlights, badges
+  paleTeal:   "#E0EDE8", // info surfaces
 
-  // Goal accent colors — each blocked app gets one
-  goalTeal:   "#00C9A7",
-  goalPurple: "#8B5CF6",
-  goalCoral:  "#FF6B6B",
-  goalOrange: "#FF9F43",
-  goalBlue:   "#4ECDC4",
-  goalGreen:  "#6BCB77",
-  goalPink:   "#FF85A1",
-  goalYellow: "#FFD93D",
+  // Backgrounds — warm wood neutrals (no white)
+  parchment:  "#F5EDDF", // default page background
+  parchmentSoft: "#FBF6EC", // polaroid card, list group surface
+  sandstone:  "#EAD9BD", // cards, modals, elevated
+  birch:      "#D4B896", // dividers, input borders
 
-  // Legacy keys kept for built-in components
+  // Wood accents
+  oak:        "#A07B52",
+  walnut:     "#5C4530",
+
+  // Content tags
+  pollen:     "#E8A547", // sun-loving, fungi
+  berry:      "#C2625A", // berries, autumn, toxic
+  iris:       "#7B5A8F", // flowering
+
+  // Text
+  ink:        "#1C2420", // body
+  charcoal:   "#4A4A45", // secondary
+  stone:      "#8A8278", // muted / hint
+
+  // Legacy slots — kept so built-in boilerplate Button/Card components don't break.
+  // Mapped onto PlantPal-appropriate neutrals where possible.
+  neutral100: "#FBF6EC", // ≈ parchmentSoft
+  neutral200: "#F5EDDF", // ≈ parchment
+  neutral300: "#EAD9BD", // ≈ sandstone
+  neutral400: "#D4B896", // ≈ birch
+  neutral500: "#8A8278", // ≈ stone
+  neutral600: "#4A4A45", // ≈ charcoal
+  neutral700: "#2C2C2C",
+  neutral800: "#1C2420", // ≈ ink
+  neutral900: "#0F1411",
+
   secondary500: "#41476E",
   accent100:    "#F4F2ED",
-
-  angry100: "#FDF1F0",
-  angry500: "#C0392B",
+  angry100:     "#FDF1F0",
+  angry500:     "#C0392B",
 
   overlay20: "rgba(0, 0, 0, 0.2)",
   overlay50: "rgba(0, 0, 0, 0.5)",
 } as const
 
-export const GOAL_ACCENT_COLORS = [
-  palette.goalTeal,
-  palette.goalPurple,
-  palette.goalCoral,
-  palette.goalOrange,
-  palette.goalBlue,
-  palette.goalGreen,
-  palette.goalPink,
-  palette.goalYellow,
+export type PlantPalPalette = typeof palette
+
+// Legacy alias — the old "goal accent color" tag colors. Not used by PlantPal,
+// but kept so any leftover model types still compile.
+export type GoalAccentColor = string
+export const GOAL_ACCENT_COLORS: readonly string[] = [
+  palette.iris,
+  palette.berry,
+  palette.pollen,
+  palette.eucalyptus,
+  palette.sage,
+  palette.oak,
+  palette.mist,
+  palette.walnut,
 ] as const
 
-export type GoalAccentColor = (typeof GOAL_ACCENT_COLORS)[number]
-
+// Semantic mapping for the Ignite theme system.
 export const colors = {
   palette,
   transparent: "rgba(0, 0, 0, 0)",
-  text:           palette.warmText,
-  textDim:        palette.warmTextDim,
-  background:     palette.warmBg,
-  card:           palette.warmSurface,
-  cardElevated:   palette.warmSurfaceAlt,
-  border:         palette.warmBorder,
-  tint:           palette.warmAccent,
-  tintInactive:   palette.warmTextFaint,
-  separator:      palette.warmBorderSub,
-  accentBg:       palette.warmAccentBg,
-  accentBorder:   palette.warmAccentBorder,
-  error:          palette.warmDanger,
-  errorBackground:palette.warmDangerBg,
+
+  text:           palette.ink,
+  textDim:        palette.charcoal,
+  textMuted:      palette.stone,
+  background:     palette.parchment,
+  card:           palette.parchmentSoft,
+  cardElevated:   palette.sandstone,
+  border:         palette.birch,
+  separator:      "rgba(212,184,150,0.5)", // birch @ 50%
+  tint:           palette.tealDeep,
+  tintInactive:   palette.stone,
+  accentBg:       palette.paleTeal,
+  accentBorder:   palette.mist,
+  error:          palette.berry,
+  errorBackground:"#FDF1F0",
 } as const
