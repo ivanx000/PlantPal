@@ -1,19 +1,17 @@
-# React Native Boilerplate
+# PlantPal
 
-A modern React Native starter template built with Expo, TypeScript, and best practices. Includes pre-built screens, theme system, i18n support, state management setup, and EAS build configuration.
+A beautiful botanical field journal app for discovering, documenting, and organizing plant finds. Capture photos of plants you encounter in nature, add scientific names, filter by category, and maintain a personal collection of your botanical discoveries.
 
-## What's Included
+## Features
 
-This boilerplate comes with:
-- Pre-built generic screens (Home, Onboarding, Paywall, Settings, Legal, Error)
-- Reusable UI component library
-- Light and dark theme system with custom colors and typography
-- Multi-language i18n setup (EN, ES, FR, AR, HI, JA, KO)
-- State management with React Context API and MMKV persistent storage
-- Navigation setup with React Navigation (native-stack, bottom-tabs)
-- Dev and production configuration management
-- Debugging and testing infrastructure
-- EAS build profiles for iOS and Android
+- **Field Journal Dashboard** — View your plant discoveries as polaroid cards with stats tracking (total finds, species count, weekly activity)
+- **Plant Photography** — Capture photos of plants you find with an intuitive camera interface
+- **Categorization** — Organize finds by category (Flowers, Trees, Fungi, Berries)
+- **Scientific Records** — Document each find with common name, Latin name, date, and location
+- **Persistent Storage** — All discoveries are saved locally on your device
+- **Dark Mode Support** — Beautiful dark theme for low-light plant hunting
+- **Multi-language Support** — Available in English, Spanish, French, Arabic, Hindi, Japanese, and Korean
+- **Responsive Design** — Works seamlessly on iOS and Android devices
 
 ## Tech Stack
 
@@ -37,46 +35,58 @@ This boilerplate comes with:
 
 ```
 app/
-├── screens/          # Pre-built screens (Home, Onboarding, Paywall, Settings, Legal, Error)
-├── context/          # Global state management (AppStateContext, etc.)
-├── navigators/       # Navigation setup (App, Main navigators + types)
-├── components/       # Reusable UI component library
-├── theme/            # Colors, typography, spacing, dark/light theme system
-├── hooks/            # Shared hooks for common patterns
+├── screens/          # App screens (Dashboard/Field Journal, Paywall, Settings, Onboarding)
+├── components/
+│   ├── plantpal/     # Plant-specific UI components (Polaroid cards, icons)
+│   └── ...           # Shared UI components
+├── context/          # State management (app state, purchases)
+├── navigators/       # Navigation setup and types
+├── theme/            # PlantPal-specific colors, typography, spacing
+├── hooks/            # Custom React hooks
 ├── models/           # TypeScript type definitions
-├── services/api/     # apisauce API client + error handling
-├── utils/            # Storage (MMKV wrapper), helpers, formatters
-├── i18n/             # Translation files per language
-├── config/           # Dev/prod configuration + base setup
-└── devtools/         # Reactotron config
-assets/
-├── icons/
-└── images/
+├── services/api/     # API integration
+├── utils/            # Storage, helpers, formatters
+├── i18n/             # Translations (EN, ES, FR, AR, HI, JA, KO)
+└── config/           # Development/production configuration
 ```
-
-## Included Screens
-
-| Screen | Description |
-|---|---|
-| **Home** | Main entry point — customize with your app's primary content |
-| **Onboarding** | User introduction flow — ready to adapt for your setup/tutorial needs |
-| **Paywall** | Monetization screen — template for subscription or premium features |
-| **Settings** | Settings and user preferences — theme toggle, language selection, etc. |
-| **Legal** | Terms and privacy — static content screens |
-| **Error** | Error boundary screen — handles crashes gracefully |
-
-## State Management
-
-The boilerplate uses React Context API for global state with MMKV for persistent local storage. Define your data models and contexts in `app/models/` and `app/context/` — no backend required unless you add one.
 
 ## Getting Started
 
-```bash
-npm install --legacy-peer-deps
-npm run start
-```
+### Prerequisites
+- Node.js 18+ and npm/yarn
+- Expo CLI
+- Xcode (for iOS) / Android Studio (for Android)
 
-The app uses a custom dev client. Build it first before running on a device or simulator:
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repo-url>
+   cd PlantPal
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run start
+   ```
+
+4. Open on iOS or Android:
+   ```bash
+   # iOS
+   npm run ios
+   
+   # Android
+   npm run android
+   ```
+
+## Building for Deployment
+
+The project uses EAS (Expo Application Services) for building and distributing. Build profiles are configured in `eas.json`:
 
 ```bash
 # iOS
@@ -92,9 +102,9 @@ npm run build:android:preview  # Google Play internal track
 npm run build:android:prod     # Play Store
 ```
 
-**Prerequisites:** Node.js >= 20, Xcode (iOS), Android Studio (Android), EAS CLI (`npm i -g eas-cli`)
+**Prerequisites:** EAS CLI (`npm i -g eas-cli`)
 
-## Other Scripts
+## Development Scripts
 
 ```bash
 npm run compile         # TypeScript type check
@@ -104,25 +114,18 @@ npm run test            # Jest unit tests
 npm run test:watch      # Jest in watch mode
 npm run test:maestro    # Maestro E2E tests
 npm run depcruise:graph # Generate dependency graph SVG
-npm run adb             # Android reverse port forwarding (dev)
 ```
-
-## Theme System
-
-The boilerplate includes a custom theme system supporting light and dark modes, toggled automatically from system preference. Colors, spacing, typography, and timing values are centralized in `app/theme/` and provided via React Context for consumption across all screens and components.
-
-Customize colors, fonts, and spacing in the theme files to match your brand.
 
 ## Configuration
 
+Key configuration files:
+
 | File | Purpose |
 |---|---|
-| `app/config/config.base.ts` | Base config (nav persistence, error catching, exit routes) |
-| `app/config/config.dev.ts` | Dev API base URL and settings |
-| `app/config/config.prod.ts` | Production API base URL and settings |
-| `app.json` | Expo app config (name, bundle IDs, icons, plugins) |
-| `app.config.ts` | Dynamic Expo config (iOS privacy manifests) |
-| `eas.json` | EAS build profiles |
-| `tsconfig.json` | TypeScript strict mode, path aliases (`@/*`, `@assets/*`) |
+| `app/config/config.base.ts` | Base config (nav persistence, error handling) |
+| `app/config/config.dev.ts` | Development API settings |
+| `app/config/config.prod.ts` | Production API settings |
+| `app.json` | Expo app metadata (name, bundle IDs, icons) |
+| `eas.json` | EAS build profiles for iOS and Android |
 
-**App identifiers:** Customize in `app.json` (iOS bundle ID, Android package name, deep link scheme)
+Customize app identifiers in `app.json` (iOS bundle ID: `com.plantpal.app`, Android package: `com.plantpal.app`)
