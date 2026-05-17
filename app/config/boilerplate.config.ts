@@ -103,6 +103,14 @@ export const BoilerplateConfig: BoilerplateConfigType = {
     legal: "Then £24.99 / year. Cancel anytime before the trial ends.",
   },
   revenueCat: {
+    // To enable real subscriptions on iOS:
+    // 1. Create a PlantPal app in App Store Connect (bundle id: com.plantpal.app).
+    // 2. Create two subscription products there ("plantpal_yearly", "plantpal_monthly")
+    //    under a shared subscription group, with a 7-day free trial intro on yearly.
+    // 3. Sign up at https://app.revenuecat.com, create a project, link the App Store
+    //    Connect API key, and add the two products under an "default" Offering.
+    // 4. Copy the iOS app's public API key (starts with "appl_") and paste it below.
+    // 5. Remove the __DEV__ skip link in PaywallScreen.tsx.
     apiKey: "YOUR_REVENUECAT_API_KEY",
     entitlementName: "premium",
   },
