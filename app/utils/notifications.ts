@@ -13,10 +13,12 @@ Notifications.setNotificationHandler({
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (Platform.OS === "web") return false
-  const { status: existing } = await Notifications.getPermissionsAsync()
-  if (existing === "granted") return true
-  const { status } = await Notifications.requestPermissionsAsync()
-  return status === "granted"
+  // `status` is on PermissionResponse at runtime but expo-notifications'
+  // shipped .d.ts is incomplete — cast through any.
+  const existing = (await Notifications.getPermissionsAsync()) as any
+  if (existing?.status === "granted") return true
+  const next = (await Notifications.requestPermissionsAsync()) as any
+  return next?.status === "granted"
 }
 
 export async function cancelNotification(id: string): Promise<void> {

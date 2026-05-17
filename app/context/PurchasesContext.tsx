@@ -28,12 +28,37 @@ type PurchasesContextType = {
 
 const PurchasesContext = createContext<PurchasesContextType | null>(null)
 
+// True if the RevenueCat API key has been replaced with a real one.
+// While the boilerplate placeholder is in place we skip SDK init entirely,
+// so the console isn't spammed with "Invalid API Key" errors.
+function hasValidRevenueCatKey(): boolean {
+  const key = BoilerplateConfig.revenueCat.apiKey
+  return (
+    !!key &&
+    key !== "YOUR_REVENUECAT_API_KEY" &&
+    !key.startsWith("YOUR_") &&
+    key.length > 8
+  )
+}
+
 export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    if (!hasValidRevenueCatKey()) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.info(
+          "[PlantPal] RevenueCat API key not configured — running in mock mode. " +
+            "Add your appl_… key in app/config/boilerplate.config.ts to enable purchases.",
+        )
+      }
+      setIsLoading(false)
+      return
+    }
+
     if (__DEV__) {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG)
     }
@@ -57,9 +82,22 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
 
     loadInitialData()
 
-    Purchases.addCustomerInfoUpdateListener((info) => {
-      setCustomerInfo(info)
-    })
+    // The newer react-native-purchases versions don't return a subscription
+    // handle from addCustomerInfoUpdateListener — explicitly remove on cleanup.
+    const listener = (info: CustomerInfo) => setCustomerInfo(info)
+    Purchases.addCustomerInfoUpdateListener(listener)
+
+    return () => {
+      try {
+        // Available on most react-native-purchases versions.
+        const anyPurchases = Purchases as unknown as {
+          removeCustomerInfoUpdateListener?: (l: typeof listener) => void
+        }
+        anyPurchases.removeCustomerInfoUpdateListener?.(listener)
+      } catch {
+        // Swallow — not critical if the SDK doesn't expose this on a given version.
+      }
+    }
   }, [])
 
   const isPremium = useMemo(() => {
@@ -68,6 +106,7 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
   }, [customerInfo])
 
   const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
+    if (!hasValidRevenueCatKey()) return false
     try {
       const { customerInfo: info } = await Purchases.purchasePackage(pkg)
       setCustomerInfo(info)
@@ -81,6 +120,7 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
   }, [])
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
+    if (!hasValidRevenueCatKey()) return false
     try {
       const info = await Purchases.restorePurchases()
       setCustomerInfo(info)

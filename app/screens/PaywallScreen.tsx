@@ -94,7 +94,13 @@ export function PaywallScreen({ navigation }: AppStackScreenProps<"Paywall">) {
 
   if (isLoading) {
     return (
-      <Screen preset="fixed" safeAreaEdges={["top", "bottom"]} systemBarStyle="dark" backgroundColor={PP_COLORS.parchment}>
+      <Screen
+        preset="fixed"
+        safeAreaEdges={["top", "bottom"]}
+        systemBarStyle="dark"
+        backgroundColor={PP_COLORS.parchment}
+        contentContainerStyle={{ flex: 1 }}
+      >
         <View style={styles.loading}>
           <ActivityIndicator size="large" color={PP_COLORS.tealDeep} />
         </View>
@@ -110,7 +116,13 @@ export function PaywallScreen({ navigation }: AppStackScreenProps<"Paywall">) {
     : BoilerplateConfig.paywall.monthlyPrice
 
   return (
-    <Screen preset="fixed" safeAreaEdges={["top"]} systemBarStyle="dark" backgroundColor={PP_COLORS.parchment}>
+    <Screen
+      preset="fixed"
+      safeAreaEdges={["top"]}
+      systemBarStyle="dark"
+      backgroundColor={PP_COLORS.parchment}
+      contentContainerStyle={{ flex: 1 }}
+    >
       <ScrollView
         style={{ flex: 1, backgroundColor: PP_COLORS.parchment }}
         contentContainerStyle={{ paddingBottom: 160 }}

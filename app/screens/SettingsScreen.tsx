@@ -56,7 +56,13 @@ export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">)
   const buildVersion = Application.nativeBuildVersion ?? "218"
 
   return (
-    <Screen preset="fixed" safeAreaEdges={["top"]} systemBarStyle="dark" backgroundColor={PP_COLORS.parchment}>
+    <Screen
+      preset="fixed"
+      safeAreaEdges={["top"]}
+      systemBarStyle="dark"
+      backgroundColor={PP_COLORS.parchment}
+      contentContainerStyle={{ flex: 1 }}
+    >
       <ScrollView
         style={{ flex: 1, backgroundColor: PP_COLORS.parchment }}
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 32 }}

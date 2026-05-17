@@ -25,7 +25,13 @@ export function ResultScreen({ navigation }: MainStackScreenProps<"Result">) {
   const insets = useSafeAreaInsets()
 
   return (
-    <Screen preset="fixed" safeAreaEdges={["top"]} systemBarStyle="dark" backgroundColor={PP_COLORS.parchment}>
+    <Screen
+      preset="fixed"
+      safeAreaEdges={["top"]}
+      systemBarStyle="dark"
+      backgroundColor={PP_COLORS.parchment}
+      contentContainerStyle={{ flex: 1 }}
+    >
       <ScrollView
         style={{ flex: 1, backgroundColor: PP_COLORS.parchment }}
         contentContainerStyle={{ paddingBottom: 180 }}
