@@ -31,6 +31,8 @@ export interface BoilerplateConfigType {
   }
   revenueCat: {
     apiKey: string
+    /** Optional RevenueCat Test Store key for development. Used when __DEV__ is true. */
+    testApiKey?: string
     entitlementName: string
   }
 }
@@ -103,7 +105,19 @@ export const BoilerplateConfig: BoilerplateConfigType = {
     legal: "Then £24.99 / year. Cancel anytime before the trial ends.",
   },
   revenueCat: {
-    apiKey: "YOUR_REVENUECAT_API_KEY",
+    // PlantPal RevenueCat project: 419b4d67
+    // App Store Connect app: PlantPal: Field Journal (com.ivanxie.plantpal)
+    // Subscriptions: plantpal_yearly (£24.99/yr), plantpal_monthly (£4.99/mo)
+    //
+    // Two keys:
+    //   apiKey      → real iOS public key (appl_...) for production / TestFlight builds
+    //   testApiKey  → RevenueCat Test Store key for the simulator until the Paid
+    //                  Applications Agreement is signed in App Store Connect.
+    //
+    // We currently use the test key in __DEV__ and the appl_ key elsewhere — see
+    // app/context/PurchasesContext.tsx.
+    apiKey: "appl_fRuQmqgTGjhcaaoBiITjOnCdSjM",
+    testApiKey: "test_MrnfqFnFpGuFXGaIBXnvVQVhYNg",
     entitlementName: "premium",
   },
 }

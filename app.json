@@ -16,7 +16,7 @@
   ],
   "android": {
     "icon": "./assets/icon.png",
-    "package": "com.plantpal.app",
+    "package": "com.ivanxie.plantpal",
     "adaptiveIcon": {
       "foregroundImage": "./assets/icon.png",
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
@@ -27,7 +27,7 @@
   "ios": {
     "icon": "./assets/icon.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.plantpal.app"
+    "bundleIdentifier": "com.ivanxie.plantpal"
   },
   "web": {
     "favicon": "./assets/icon.png",

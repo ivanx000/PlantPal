@@ -249,6 +249,20 @@ export function PaywallScreen({ navigation }: AppStackScreenProps<"Paywall">) {
           )}
         </TouchableOpacity>
         <Text style={styles.legal}>{BoilerplateConfig.paywall.legal}</Text>
+
+        {/* Dev-only escape hatch — kept as a safety net if RevenueCat is
+            mis-configured or the Test Store key fails to load. Stripped from
+            release builds. */}
+        {__DEV__ ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: "Main" }] })}
+            hitSlop={8}
+            style={styles.devSkip}
+          >
+            <Text style={styles.devSkipText}>Skip for now (dev only)</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </Screen>
   )
@@ -530,5 +544,19 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: PP_COLORS.stone,
     letterSpacing: 0.1,
+  },
+  devSkip: {
+    marginTop: 8,
+    alignSelf: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  devSkipText: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 11.5,
+    color: PP_COLORS.stone,
+    letterSpacing: 0.3,
+    textDecorationLine: "underline",
+    textDecorationColor: "rgba(138,130,120,0.5)",
   },
 })

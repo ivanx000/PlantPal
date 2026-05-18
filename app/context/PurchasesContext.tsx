@@ -28,17 +28,19 @@ type PurchasesContextType = {
 
 const PurchasesContext = createContext<PurchasesContextType | null>(null)
 
-// True if the RevenueCat API key has been replaced with a real one.
-// While the boilerplate placeholder is in place we skip SDK init entirely,
-// so the console isn't spammed with "Invalid API Key" errors.
-function hasValidRevenueCatKey(): boolean {
-  const key = BoilerplateConfig.revenueCat.apiKey
-  return (
-    !!key &&
-    key !== "YOUR_REVENUECAT_API_KEY" &&
-    !key.startsWith("YOUR_") &&
-    key.length > 8
-  )
+// Picks the RevenueCat key for the current build:
+//   • __DEV__ → testApiKey if present (RevenueCat Test Store), else apiKey
+//   • production → apiKey
+// Returns "" if no usable key is configured, so init can be skipped cleanly.
+function getRevenueCatKey(): string {
+  const { apiKey, testApiKey } = BoilerplateConfig.revenueCat
+  const candidate = __DEV__ && testApiKey ? testApiKey : apiKey
+  const looksReal =
+    !!candidate &&
+    !candidate.startsWith("YOUR_") &&
+    candidate !== "YOUR_REVENUECAT_API_KEY" &&
+    candidate.length > 8
+  return looksReal ? candidate : ""
 }
 
 export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
@@ -47,7 +49,8 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!hasValidRevenueCatKey()) {
+    const key = getRevenueCatKey()
+    if (!key) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
         console.info(
@@ -61,9 +64,15 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
 
     if (__DEV__) {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG)
+      // eslint-disable-next-line no-console
+      console.info(
+        `[PlantPal] RevenueCat configured with ${
+          key.startsWith("test_") ? "Test Store" : "production"
+        } key.`,
+      )
     }
 
-    Purchases.configure({ apiKey: BoilerplateConfig.revenueCat.apiKey })
+    Purchases.configure({ apiKey: key })
 
     const loadInitialData = async () => {
       try {
@@ -106,7 +115,7 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
   }, [customerInfo])
 
   const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
-    if (!hasValidRevenueCatKey()) return false
+    if (!getRevenueCatKey()) return false
     try {
       const { customerInfo: info } = await Purchases.purchasePackage(pkg)
       setCustomerInfo(info)
@@ -120,7 +129,7 @@ export const PurchasesProvider: FC<PropsWithChildren> = ({ children }) => {
   }, [])
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
-    if (!hasValidRevenueCatKey()) return false
+    if (!getRevenueCatKey()) return false
     try {
       const info = await Purchases.restorePurchases()
       setCustomerInfo(info)
