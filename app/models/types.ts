@@ -1,5 +1,4 @@
-import type { GoalAccentColor } from "@/theme/colors"
-
+// Boilerplate types retained for schedule utilities
 export interface TimeFrame {
   id: string
   startTime: string
@@ -21,25 +20,20 @@ export interface BlockedApp {
   blockedMinutesByDay?: Record<string, number>
 }
 
-export interface Goal {
-  id: string
-  name: string
-  description?: string
-  accentColor: GoalAccentColor
-  isArchived: boolean
-  createdAt: string
+export interface PlantIdentification {
+  commonName: string
+  scientificName: string
+  family: string
+  score: number // 0–1 confidence
 }
 
-export interface FocusSession {
+export interface PlantFind {
   id: string
-  goalId: string
-  startedAt: string
-  endedAt: string
-  plannedDuration: number
-  actualDuration: number
-  reflection: string
-  focusScore: number
-  wasDistracted: boolean
-  distractionNote?: string
-  completedFully: boolean
+  commonName: string
+  scientificName: string
+  family: string
+  confidence: number // 0–1
+  imageUri: string
+  savedAt: string // ISO date string
+  note?: string
 }

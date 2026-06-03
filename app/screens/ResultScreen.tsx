@@ -1,12 +1,12 @@
 // Identification result — the emotional centre of PlantPal.
-// A polaroid photo, plant name (display serif), Latin binomial (italic serif),
-// a 3-leaf confidence ramp, a data row, content tags, a peek of "About this plant",
-// and a primary "Save to journal" CTA.
+// Shows the captured photo as a Polaroid, the top plant ID result with
+// confidence, a data row, tags, and a "Save to journal" CTA.
 
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native"
+import { useState } from "react"
+import { Alert, Image, ScrollView, Share, StyleSheet, TouchableOpacity, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { Polaroid } from "@/components/plantpal/Polaroid"
+import { Screen } from "@/components/Screen"
 import {
   ConfidenceLeaf,
   IconBookmark,
@@ -16,13 +16,53 @@ import {
   IconNote,
   IconShare,
 } from "@/components/plantpal/PPIcons"
-import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
+import { useJournal } from "@/context/JournalContext"
 import type { MainStackScreenProps } from "@/navigators/navigationTypes"
 import { PP_COLORS, PP_FONT } from "@/theme/plantpal"
+import { format } from "date-fns"
 
-export function ResultScreen({ navigation }: MainStackScreenProps<"Result">) {
+function confidenceLevel(score: number): { label: string; leaves: 1 | 2 | 3 } {
+  if (score >= 0.75) return { label: "High confidence", leaves: 3 }
+  if (score >= 0.4) return { label: "Medium confidence", leaves: 2 }
+  return { label: "Low confidence", leaves: 1 }
+}
+
+export function ResultScreen({ navigation, route }: MainStackScreenProps<"Result">) {
+  const { imageUri, identifications } = route.params
   const insets = useSafeAreaInsets()
+  const { addFind } = useJournal()
+  const [saved, setSaved] = useState(false)
+
+  const top = identifications[0]
+  const { label: confidenceText, leaves } = confidenceLevel(top.score)
+  const now = new Date()
+  const timeLabel = format(now, "h:mm aa").toLowerCase()
+
+  const handleSave = () => {
+    if (saved) return
+    addFind({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      commonName: top.commonName,
+      scientificName: top.scientificName,
+      family: top.family,
+      confidence: top.score,
+      imageUri,
+      savedAt: now.toISOString(),
+    })
+    setSaved(true)
+    Alert.alert("Saved!", `${top.commonName} has been added to your journal.`)
+  }
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `I found a ${top.commonName} (${top.scientificName}) using PlantPal!`,
+      })
+    } catch {
+      // user dismissed share sheet
+    }
+  }
 
   return (
     <Screen
@@ -47,78 +87,76 @@ export function ResultScreen({ navigation }: MainStackScreenProps<"Result">) {
           >
             <IconClose size={18} color={PP_COLORS.charcoal} strokeWidth={1.6} />
           </TouchableOpacity>
-          <Text style={styles.spotted}>Spotted 2:14 pm</Text>
+          <Text style={styles.spotted}>Spotted {timeLabel}</Text>
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} hitSlop={8}>
             <IconMore size={20} color={PP_COLORS.charcoal} />
           </TouchableOpacity>
         </View>
 
-        {/* Polaroid */}
-        <View style={styles.polaroidWrap}>
-          <Polaroid
-            tilt={-1.2}
-            width={286}
-            photoAspect={262 / 296}
-            tint="rgba(189,132,178,0.55)"
-            caption={
-              <Text style={styles.locStamp}>HAMPSTEAD HEATH · MAY 11</Text>
-            }
-          />
+        {/* Photo — real capture shown as Polaroid-style card */}
+        <View style={styles.photoWrap}>
+          <View style={styles.polaroidCard}>
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.photo}
+              resizeMode="cover"
+            />
+          </View>
         </View>
 
-        {/* Identification — name + binomial */}
+        {/* Identification */}
         <View style={{ paddingHorizontal: 28 }}>
-          <Text style={styles.commonName}>Common foxglove</Text>
-          <Text style={styles.binomial}>Digitalis purpurea</Text>
+          <Text style={styles.commonName}>{top.commonName}</Text>
+          <Text style={styles.binomial}>{top.scientificName}</Text>
 
           {/* Confidence ramp */}
           <View style={styles.confidenceRow}>
             <View style={styles.leaves}>
-              <ConfidenceLeaf filled color={PP_COLORS.sage} size={14} />
+              <ConfidenceLeaf filled={leaves >= 1} color={PP_COLORS.sage} size={14} />
               <View style={{ width: 4 }} />
-              <ConfidenceLeaf filled color={PP_COLORS.eucalyptus} size={16} />
+              <ConfidenceLeaf filled={leaves >= 2} color={PP_COLORS.eucalyptus} size={16} />
               <View style={{ width: 4 }} />
-              <ConfidenceLeaf filled color={PP_COLORS.tealDeep} size={18} />
+              <ConfidenceLeaf filled={leaves >= 3} color={PP_COLORS.tealDeep} size={18} />
             </View>
-            <Text style={styles.confidenceLabel}>High confidence</Text>
+            <Text style={styles.confidenceLabel}>{confidenceText}</Text>
             <View style={{ flex: 1 }} />
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.notQuite}>Not quite?</Text>
-            </TouchableOpacity>
+            {identifications.length > 1 && (
+              <TouchableOpacity activeOpacity={0.7}>
+                <Text style={styles.notQuite}>Not quite?</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Three-up data row */}
-          <View style={styles.dataRow}>
-            <DataCell label="Family" value="Plantaginaceae" italic />
-            <DataCell label="Bloom" value="Jun – Sep" border />
-            <DataCell label="Height" value="up to 2 m" border />
-          </View>
+          {/* Data row */}
+          {top.family ? (
+            <View style={styles.dataRow}>
+              <DataCell label="Family" value={top.family} italic />
+              <DataCell label="Score" value={`${Math.round(top.score * 100)}%`} border />
+            </View>
+          ) : null}
 
-          {/* Tags */}
-          <View style={styles.tagsRow}>
-            <Tag color={PP_COLORS.iris} bg="rgba(123,90,143,0.14)">
-              Flowering plant
-            </Tag>
-            <Tag color={PP_COLORS.oak} bg="rgba(160,123,82,0.14)">
-              Biennial
-            </Tag>
-            <Tag color={PP_COLORS.eucalyptus} bg={PP_COLORS.paleTeal}>
-              Pollinator
-            </Tag>
-            <Tag color={PP_COLORS.berry} bg="rgba(194,98,90,0.14)">
-              Toxic
-            </Tag>
-          </View>
+          {/* Other matches */}
+          {identifications.length > 1 && (
+            <View style={styles.otherMatchesWrap}>
+              <Text style={styles.otherMatchesTitle}>Other possibilities</Text>
+              {identifications.slice(1).map((id) => (
+                <View key={id.scientificName} style={styles.otherMatchRow}>
+                  <Text style={styles.otherMatchName}>{id.commonName}</Text>
+                  <Text style={styles.otherMatchScore}>{Math.round(id.score * 100)}%</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
-          {/* About — scroll cue */}
+          {/* About stub */}
           <View style={styles.aboutWrap}>
             <View style={styles.aboutHeader}>
               <Text style={styles.aboutTitle}>About this plant</Text>
               <IconChevronDown size={16} color={PP_COLORS.stone} />
             </View>
             <Text style={styles.aboutBody}>
-              Foxglove rises through the woodland edge in its second summer,
-              sending up a one-sided spire of speckled bells. Bumblebees climb…
+              {top.commonName} ({top.scientificName}) belongs to the {top.family || "plant"} family.
+              Tap "Save to journal" to add your find and build your field notes over time.
             </Text>
           </View>
         </View>
@@ -127,21 +165,27 @@ export function ResultScreen({ navigation }: MainStackScreenProps<"Result">) {
       {/* Bottom action bar */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}>
         <View style={styles.actionsRow}>
-          <TouchableOpacity activeOpacity={0.85} style={styles.saveBtn}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[styles.saveBtn, saved && styles.saveBtnDone]}
+            onPress={handleSave}
+          >
             <IconBookmark size={17} color={PP_COLORS.parchment} strokeWidth={1.7} />
-            <Text style={styles.saveBtnText}>Save to journal</Text>
+            <Text style={styles.saveBtnText}>{saved ? "Saved to journal" : "Save to journal"}</Text>
           </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.85} style={styles.ghostBtn}>
             <IconNote size={18} color={PP_COLORS.tealDeep} strokeWidth={1.6} />
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.85} style={styles.ghostBtn}>
+          <TouchableOpacity activeOpacity={0.85} style={styles.ghostBtn} onPress={handleShare}>
             <IconShare size={18} color={PP_COLORS.tealDeep} strokeWidth={1.6} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.matchesLine}>
-          Not quite right?{" "}
-          <Text style={styles.matchesLink}>See other matches</Text>
-        </Text>
+        {!saved && identifications.length > 1 && (
+          <Text style={styles.matchesLine}>
+            Not quite right?{" "}
+            <Text style={styles.matchesLink}>See other matches</Text>
+          </Text>
+        )}
       </View>
     </Screen>
   )
@@ -164,34 +208,11 @@ function DataCell({
       <Text
         style={[
           styles.dataValue,
-          italic
-            ? {
-                fontFamily: PP_FONT.serifItalic,
-                fontStyle: "italic",
-                fontSize: 15,
-                fontWeight: "400",
-              }
-            : null,
+          italic ? { fontFamily: PP_FONT.serifItalic, fontStyle: "italic", fontSize: 15, fontWeight: "400" } : null,
         ]}
       >
         {value}
       </Text>
-    </View>
-  )
-}
-
-function Tag({
-  color,
-  bg,
-  children,
-}: {
-  color: string
-  bg: string
-  children: string
-}) {
-  return (
-    <View style={[styles.tag, { backgroundColor: bg }]}>
-      <Text style={[styles.tagText, { color }]}>{children}</Text>
     </View>
   )
 }
@@ -218,17 +239,30 @@ const styles = StyleSheet.create({
     color: PP_COLORS.stone,
     letterSpacing: 0.2,
   },
-  polaroidWrap: {
+  photoWrap: {
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 28,
     paddingBottom: 28,
   },
-  locStamp: {
-    fontFamily: PP_FONT.uiMedium,
-    fontSize: 11.5,
-    color: PP_COLORS.stone,
-    letterSpacing: 0.4,
-    textAlign: "center",
+  polaroidCard: {
+    backgroundColor: PP_COLORS.parchmentSoft,
+    padding: 10,
+    paddingBottom: 42,
+    borderRadius: 3,
+    borderWidth: 0.5,
+    borderColor: "rgba(140,110,70,0.18)",
+    shadowColor: "#3C2814",
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 6,
+    transform: [{ rotate: "-1.2deg" }],
+  },
+  photo: {
+    width: 260,
+    height: 236,
+    borderRadius: 2,
+    backgroundColor: PP_COLORS.birch,
   },
   commonName: {
     fontFamily: PP_FONT.displayRegular,
@@ -295,23 +329,36 @@ const styles = StyleSheet.create({
     color: PP_COLORS.ink,
     fontWeight: "500",
   },
-  tagsRow: {
-    marginTop: 16,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
+  otherMatchesWrap: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 0.5,
+    borderTopColor: PP_COLORS.birchSoft,
   },
-  tag: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  tagText: {
+  otherMatchesTitle: {
     fontFamily: PP_FONT.uiMedium,
     fontSize: 12,
-    letterSpacing: 0.1,
+    color: PP_COLORS.stone,
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  otherMatchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    borderBottomColor: PP_COLORS.birchHairline,
+  },
+  otherMatchName: {
+    fontFamily: PP_FONT.uiRegular,
+    fontSize: 13.5,
+    color: PP_COLORS.charcoal,
+    flex: 1,
+  },
+  otherMatchScore: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 13,
+    color: PP_COLORS.stone,
   },
   aboutWrap: {
     marginTop: 26,
@@ -367,6 +414,11 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
     elevation: 4,
+  },
+  saveBtnDone: {
+    backgroundColor: PP_COLORS.sage,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   saveBtnText: {
     fontFamily: PP_FONT.uiMedium,

@@ -2,7 +2,6 @@
 // Subscription card up top (no login/profile), then Identification, Capture,
 // Journal, and About sections. Toggle / detail / chevron rows.
 
-import { useState } from "react"
 import {
   Alert,
   Linking,
@@ -23,20 +22,14 @@ import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { BoilerplateConfig } from "@/config/boilerplate.config"
 import { usePurchases } from "@/context/PurchasesContext"
+import { useAppSettings } from "@/context/SettingsContext"
 import type { MainStackScreenProps } from "@/navigators/navigationTypes"
 import { PP_COLORS, PP_FONT } from "@/theme/plantpal"
 
 export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">) {
   const { isPremium, restorePurchases } = usePurchases()
+  const { settings, updateSetting } = useAppSettings()
   const insets = useSafeAreaInsets()
-
-  // Local toggles — wired up to in-memory state for the design. The boilerplate
-  // didn't have a persisted settings store, so we keep these self-contained.
-  const [detectMushrooms, setDetectMushrooms] = useState(true)
-  const [toxicWarnings, setToxicWarnings] = useState(true)
-  const [savePhotos, setSavePhotos] = useState(true)
-  const [embedExif, setEmbedExif] = useState(false)
-  const [shutterSound, setShutterSound] = useState(true)
 
   const handleRestore = async () => {
     const success = await restorePurchases()
@@ -131,14 +124,14 @@ export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">)
           <Row
             label="Detect mushrooms"
             toggle
-            on={detectMushrooms}
-            onToggle={setDetectMushrooms}
+            on={settings.detectMushrooms}
+            onToggle={(v) => updateSetting("detectMushrooms", v)}
           />
           <Row
             label="Show toxic warnings"
             toggle
-            on={toxicWarnings}
-            onToggle={setToxicWarnings}
+            on={settings.toxicWarnings}
+            onToggle={(v) => updateSetting("toxicWarnings", v)}
           />
           <Row label="Confidence threshold" detail="Medium" last />
         </ListGroup>
@@ -149,20 +142,20 @@ export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">)
           <Row
             label="Save originals to Photos"
             toggle
-            on={savePhotos}
-            onToggle={setSavePhotos}
+            on={settings.savePhotos}
+            onToggle={(v) => updateSetting("savePhotos", v)}
           />
           <Row
             label="Embed location in EXIF"
             toggle
-            on={embedExif}
-            onToggle={setEmbedExif}
+            on={settings.embedExif}
+            onToggle={(v) => updateSetting("embedExif", v)}
           />
           <Row
             label="Sound on shutter"
             toggle
-            on={shutterSound}
-            onToggle={setShutterSound}
+            on={settings.shutterSound}
+            onToggle={(v) => updateSetting("shutterSound", v)}
             last
           />
         </ListGroup>

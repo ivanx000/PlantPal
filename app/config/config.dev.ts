@@ -8,4 +8,5 @@
 export default {
   revenueCatApiKey: process.env.REVENUECAT_API_KEY ?? "",
   revenueCatEntitlement: "Pro",
+  plantNetApiKey: process.env.PLANTNET_API_KEY ?? "",
 }

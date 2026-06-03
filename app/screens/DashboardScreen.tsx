@@ -3,41 +3,48 @@
 // plus a floating tab bar with a big primary camera button in the middle.
 
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { Polaroid } from "@/components/plantpal/Polaroid"
-import {
-  IconBookmark,
-  IconCamera,
-  IconLeaf,
-  IconMap,
-  IconSettings,
-  IconUser,
-} from "@/components/plantpal/PPIcons"
 import { Screen } from "@/components/Screen"
+import { TabBar } from "@/components/plantpal/TabBar"
+import { Polaroid } from "@/components/plantpal/Polaroid"
+import { IconSettings } from "@/components/plantpal/PPIcons"
 import { Text } from "@/components/Text"
+import { useJournal } from "@/context/JournalContext"
+import type { PlantFind } from "@/models/types"
 import type { MainStackScreenProps } from "@/navigators/navigationTypes"
-import { PP_COLORS, PP_FONT, softShadow } from "@/theme/plantpal"
+import { PP_COLORS, PP_FONT } from "@/theme/plantpal"
+import { format } from "date-fns"
 
-interface Find {
-  name: string
-  latin: string
-  date: string
-  tilt: number
-  tint: string
+// Deterministic tilt + tint from a string hash so cards look hand-placed
+// but stay stable across re-renders.
+function hashString(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0
+  }
+  return Math.abs(h)
 }
 
-const FINDS: Find[] = [
-  { name: "Common foxglove", latin: "Digitalis purpurea", date: "May 11", tilt: -1.4, tint: "rgba(189,132,178,0.55)" },
-  { name: "English oak", latin: "Quercus robur", date: "May 9", tilt: 1.6, tint: "rgba(120,148,86,0.55)" },
-  { name: "Wild garlic", latin: "Allium ursinum", date: "May 6", tilt: -0.8, tint: "rgba(238,244,228,0.7)" },
-  { name: "Chanterelle", latin: "Cantharellus cibarius", date: "Apr 29", tilt: 1.2, tint: "rgba(232,165,71,0.55)" },
-  { name: "Bluebell", latin: "Hyacinthoides non-scripta", date: "Apr 24", tilt: -1.8, tint: "rgba(110,118,180,0.55)" },
-  { name: "Rowan", latin: "Sorbus aucuparia", date: "Apr 18", tilt: 0.7, tint: "rgba(194,98,90,0.55)" },
+const TINTS = [
+  "rgba(189,132,178,0.55)",
+  "rgba(120,148,86,0.55)",
+  "rgba(238,244,228,0.7)",
+  "rgba(232,165,71,0.55)",
+  "rgba(110,118,180,0.55)",
+  "rgba(194,98,90,0.55)",
+  "rgba(31,78,74,0.35)",
+  "rgba(160,123,82,0.45)",
 ]
 
+function cardProps(find: PlantFind) {
+  const h = hashString(find.id)
+  const tilt = ((h % 30) - 15) / 10 // –1.5 … +1.5
+  const tint = TINTS[h % TINTS.length]
+  return { tilt, tint }
+}
+
 export function DashboardScreen({ navigation }: MainStackScreenProps<"Home">) {
-  const insets = useSafeAreaInsets()
+  const { finds, totalFinds, totalSpecies, thisWeekCount } = useJournal()
 
   return (
     <Screen
@@ -52,10 +59,10 @@ export function DashboardScreen({ navigation }: MainStackScreenProps<"Home">) {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header — greeting + settings */}
+        {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good afternoon, Maya</Text>
+            <Text style={styles.greeting}>Good {greeting()}</Text>
             <Text style={styles.title}>Field journal</Text>
           </View>
           <TouchableOpacity
@@ -70,9 +77,9 @@ export function DashboardScreen({ navigation }: MainStackScreenProps<"Home">) {
 
         {/* Stats strip */}
         <View style={styles.statsStrip}>
-          <Stat number="47" label="finds" />
-          <Stat number="23" label="species" border />
-          <Stat number="6" label="this week" border />
+          <Stat number={String(totalFinds)} label="finds" />
+          <Stat number={String(totalSpecies)} label="species" border />
+          <Stat number={String(thisWeekCount)} label="this week" border />
         </View>
 
         {/* Filter chips */}
@@ -94,57 +101,46 @@ export function DashboardScreen({ navigation }: MainStackScreenProps<"Home">) {
           <View style={styles.sectionRule} />
         </View>
 
-        {/* Grid of finds — 2 cols */}
-        <View style={styles.grid}>
-          {FINDS.map((f) => (
-            <View key={f.name} style={styles.gridCell}>
-              <FindCard {...f} />
-            </View>
-          ))}
-        </View>
-
-        {/* See earlier */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 8, alignItems: "center" }}>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text style={styles.seeEarlier}>See earlier entries →</Text>
-          </TouchableOpacity>
-        </View>
+        {finds.length === 0 ? (
+          <EmptyJournal onCapture={() => navigation.navigate("Camera")} />
+        ) : (
+          <View style={styles.grid}>
+            {finds.map((f) => (
+              <View key={f.id} style={styles.gridCell}>
+                <FindCard find={f} />
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
-      {/* Floating tab bar */}
-      <View
-        style={[
-          styles.tabBarWrap,
-          { paddingBottom: Math.max(insets.bottom, 16) },
-        ]}
-        pointerEvents="box-none"
-      >
-        <View style={styles.tabBar}>
-          <TabButton label="Journal" active>
-            <IconBookmark size={20} color={PP_COLORS.tealDeep} strokeWidth={1.6} />
-          </TabButton>
-          <TabButton label="Explore">
-            <IconMap size={20} color={PP_COLORS.stone} strokeWidth={1.6} />
-          </TabButton>
-          {/* Primary capture button */}
-          <View style={styles.captureWrap}>
-            <TouchableOpacity activeOpacity={0.8} style={styles.captureBtn}>
-              <IconCamera size={26} color={PP_COLORS.parchment} strokeWidth={1.6} />
-            </TouchableOpacity>
-          </View>
-          <TabButton label="Discover">
-            <IconLeaf size={20} color={PP_COLORS.stone} strokeWidth={1.6} />
-          </TabButton>
-          <TabButton label="Profile">
-            <IconUser size={20} color={PP_COLORS.stone} strokeWidth={1.6} />
-          </TabButton>
-        </View>
-      </View>
+      <TabBar active="Journal" navigation={navigation} />
     </Screen>
   )
 }
 
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return "morning"
+  if (h < 17) return "afternoon"
+  return "evening"
+}
+
 // ─── sub-components ──────────────────────────────────────────────────────────
+
+function EmptyJournal({ onCapture }: { onCapture: () => void }) {
+  return (
+    <View style={styles.emptyWrap}>
+      <Text style={styles.emptyTitle}>Nothing here yet</Text>
+      <Text style={styles.emptySub}>
+        Tap the camera button below to photograph a plant and add your first find.
+      </Text>
+      <TouchableOpacity activeOpacity={0.85} style={styles.emptyBtn} onPress={onCapture}>
+        <Text style={styles.emptyBtnText}>Identify a plant</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
 
 function Stat({ number, label, border }: { number: string; label: string; border?: boolean }) {
   return (
@@ -155,23 +151,13 @@ function Stat({ number, label, border }: { number: string; label: string; border
   )
 }
 
-function Chip({
-  active,
-  color,
-  children,
-}: {
-  active?: boolean
-  color?: string
-  children: string
-}) {
+function Chip({ active, color, children }: { active?: boolean; color?: string; children: string }) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       style={[
         styles.chip,
-        active
-          ? { backgroundColor: PP_COLORS.tealDeep, borderColor: PP_COLORS.tealDeep }
-          : null,
+        active ? { backgroundColor: PP_COLORS.tealDeep, borderColor: PP_COLORS.tealDeep } : null,
       ]}
     >
       {!active && color ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
@@ -182,53 +168,29 @@ function Chip({
   )
 }
 
-function FindCard({ name, latin, date, tilt, tint }: Find) {
+function FindCard({ find }: { find: PlantFind }) {
+  const { tilt, tint } = cardProps(find)
+  const dateLabel = format(new Date(find.savedAt), "MMM d").toUpperCase()
+
   return (
     <View style={{ alignItems: "center", paddingHorizontal: 4 }}>
       <Polaroid
         tilt={tilt}
         tint={tint}
+        source={find.imageUri ? { uri: find.imageUri } : undefined}
         width={160}
         photoAspect={160 / 130}
         padding={8}
         captionPadding={26}
         caption={
           <View style={{ paddingHorizontal: 4 }}>
-            <Text style={styles.findName} numberOfLines={2}>
-              {name}
-            </Text>
-            <Text style={styles.findLatin} numberOfLines={1}>
-              {latin}
-            </Text>
-            <Text style={styles.findDate}>{date.toUpperCase()}</Text>
+            <Text style={styles.findName} numberOfLines={2}>{find.commonName}</Text>
+            <Text style={styles.findLatin} numberOfLines={1}>{find.scientificName}</Text>
+            <Text style={styles.findDate}>{dateLabel}</Text>
           </View>
         }
       />
     </View>
-  )
-}
-
-function TabButton({
-  active,
-  label,
-  children,
-}: {
-  active?: boolean
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <TouchableOpacity activeOpacity={0.7} style={styles.tabBtn}>
-      {children}
-      <Text
-        style={[
-          styles.tabLabel,
-          { color: active ? PP_COLORS.tealDeep : PP_COLORS.stone },
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
   )
 }
 
@@ -321,11 +283,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginRight: 6,
   },
-  chipDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
+  chipDot: { width: 7, height: 7, borderRadius: 4 },
   chipText: {
     fontFamily: PP_FONT.uiMedium,
     fontSize: 13,
@@ -388,65 +346,36 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
   },
-  seeEarlier: {
-    fontFamily: PP_FONT.serifItalic,
-    fontStyle: "italic",
-    fontSize: 13,
-    color: PP_COLORS.stone,
-    letterSpacing: 0.2,
-  },
-  tabBarWrap: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
+  emptyWrap: {
+    paddingHorizontal: 32,
     paddingTop: 16,
-  },
-  tabBar: {
-    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: PP_COLORS.parchmentSoft,
-    borderWidth: 0.5,
-    borderColor: PP_COLORS.birchBorderStrong,
-    borderRadius: 28,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    gap: 4,
-    ...softShadow,
   },
-  tabBtn: {
-    flex: 1,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 1,
+  emptyTitle: {
+    fontFamily: PP_FONT.serifMedium,
+    fontSize: 22,
+    color: PP_COLORS.ink,
+    letterSpacing: -0.2,
   },
-  tabLabel: {
+  emptySub: {
+    marginTop: 8,
     fontFamily: PP_FONT.uiRegular,
-    fontSize: 9.5,
-    letterSpacing: 0.2,
-    marginTop: 2,
+    fontSize: 14,
+    lineHeight: 20,
+    color: PP_COLORS.stone,
+    textAlign: "center",
   },
-  captureWrap: {
-    width: 72,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  captureBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  emptyBtn: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     backgroundColor: PP_COLORS.tealDeep,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: -22,
-    borderWidth: 4,
-    borderColor: PP_COLORS.parchment,
-    shadowColor: PP_COLORS.tealDeep,
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+  },
+  emptyBtnText: {
+    fontFamily: PP_FONT.uiMedium,
+    fontSize: 14,
+    color: PP_COLORS.parchment,
+    letterSpacing: 0.1,
   },
 })

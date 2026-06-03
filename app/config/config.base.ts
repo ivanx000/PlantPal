@@ -4,6 +4,7 @@ export interface ConfigBaseProps {
   exitRoutes: string[]
   revenueCatApiKey: string
   revenueCatEntitlement: string
+  plantNetApiKey: string
 }
 
 export type PersistNavigationConfig = ConfigBaseProps["persistNavigation"]
@@ -25,6 +26,7 @@ const BaseConfig: ConfigBaseProps = {
   exitRoutes: ["Welcome"],
   revenueCatApiKey: "",
   revenueCatEntitlement: "Pro",
+  plantNetApiKey: "",
 }
 
 export default BaseConfig

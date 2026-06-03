@@ -17,6 +17,7 @@
   "android": {
     "icon": "./assets/icon.png",
     "package": "com.ivanxie.plantpal",
+    "permissions": ["android.permission.CAMERA", "android.permission.READ_MEDIA_IMAGES"],
     "adaptiveIcon": {
       "foregroundImage": "./assets/icon.png",
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
@@ -27,7 +28,12 @@
   "ios": {
     "icon": "./assets/icon.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.ivanxie.plantpal"
+    "bundleIdentifier": "com.ivanxie.plantpal",
+    "infoPlist": {
+      "NSCameraUsageDescription": "PlantPal uses the camera to photograph plants for identification.",
+      "NSPhotoLibraryUsageDescription": "PlantPal reads photos from your library to identify plants.",
+      "NSPhotoLibraryAddUsageDescription": "PlantPal can save plant photos to your library."
+    }
   },
   "web": {
     "favicon": "./assets/icon.png",
