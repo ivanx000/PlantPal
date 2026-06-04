@@ -6,14 +6,12 @@ import { Screen } from "@/components/Screen"
 import { TabBar } from "@/components/plantpal/TabBar"
 import { Text } from "@/components/Text"
 import { useJournal } from "@/context/JournalContext"
-import { usePurchases } from "@/context/PurchasesContext"
 import type { MainStackScreenProps } from "@/navigators/navigationTypes"
 import { PP_COLORS, PP_FONT, softShadow } from "@/theme/plantpal"
 import { format } from "date-fns"
 
 export function ProfileScreen({ navigation }: MainStackScreenProps<"Profile">) {
   const { finds, totalFinds, totalSpecies, thisWeekCount } = useJournal()
-  const { isPremium } = usePurchases()
 
   const recentFinds = finds.slice(0, 3)
 
@@ -41,19 +39,6 @@ export function ProfileScreen({ navigation }: MainStackScreenProps<"Profile">) {
           <StatCell number={String(totalSpecies)} label="species" border />
           <StatCell number={String(thisWeekCount)} label="this week" border />
         </View>
-
-        {/* Subscription badge */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={[styles.subBadge, { backgroundColor: isPremium ? PP_COLORS.tealDeep : PP_COLORS.sandstone }]}
-          onPress={() => {
-            if (!isPremium) navigation.getParent()?.navigate("Paywall" as never)
-          }}
-        >
-          <Text style={[styles.subBadgeText, { color: isPremium ? PP_COLORS.parchment : PP_COLORS.charcoal }]}>
-            {isPremium ? "✦ PlantPal Premium" : "Free plan · upgrade to Premium"}
-          </Text>
-        </TouchableOpacity>
 
         {/* Recent finds */}
         {recentFinds.length > 0 && (
@@ -166,19 +151,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: PP_COLORS.stone,
     letterSpacing: 0.4,
-  },
-  subBadge: {
-    marginHorizontal: 18,
-    marginBottom: 24,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  subBadgeText: {
-    fontFamily: PP_FONT.uiMedium,
-    fontSize: 14,
-    letterSpacing: 0.1,
   },
   sectionRow: {
     flexDirection: "row",

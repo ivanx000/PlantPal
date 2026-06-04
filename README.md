@@ -11,8 +11,6 @@ A botanical field journal for iOS and Android. Photograph plants, identify them 
 - **Discover** — Curated seasonal plant suggestions updated each month (UK flora)
 - **Profile** — Your journal stats and subscription status at a glance
 - **Persistent Storage** — Journal and settings survive app restarts via MMKV
-- **Subscriptions** — Premium tier via RevenueCat (unlimited identifications, deeper field notes, offline mode, journal export)
-- **Onboarding** — Three-slide intro with notification permission request
 - **Multi-language** — i18n scaffolding in EN, ES, FR, AR, HI, JA, KO
 
 ## Tech Stack
@@ -24,7 +22,6 @@ A botanical field journal for iOS and Android. Photograph plants, identify them 
 | State | React Context + MMKV persistent storage |
 | Plant ID | [PlantNet API](https://my.plantnet.org) — mock fallback when no key set |
 | Camera | expo-image-picker (camera + photo library) |
-| Subscriptions | react-native-purchases (RevenueCat) |
 | UI | react-native-reanimated, react-native-gesture-handler, react-native-svg |
 | Fonts | Inter · Fraunces · Instrument Serif (via `@expo-google-fonts`) |
 | Networking | apisauce + fetch (PlantNet multipart upload) |
@@ -56,9 +53,7 @@ app/
 │   └── ...                   # Generic UI primitives
 ├── context/
 │   ├── JournalContext.tsx    # MMKV-backed find store + stats
-│   ├── SettingsContext.tsx   # MMKV-backed settings (detection, capture prefs)
-│   ├── PurchasesContext.tsx  # RevenueCat subscription state
-│   └── AppStateContext.tsx   # Onboarding completion flag
+│   └── SettingsContext.tsx   # MMKV-backed settings (detection, capture prefs)
 ├── services/
 │   ├── plantnet/             # PlantNet identification API
 │   └── api/                  # Generic API utilities
@@ -108,10 +103,6 @@ Without a key the app uses mock identification data so you can develop offline. 
    export PLANTNET_API_KEY=your-key-here
    ```
    Or set `PLANTNET_API_KEY` in your EAS build environment variables.
-
-### RevenueCat keys
-
-RevenueCat is pre-wired. To connect to your own dashboard set `REVENUECAT_API_KEY` in your environment, or update `app/config/config.dev.ts` and `config.prod.ts`.
 
 ## Building for Deployment
 

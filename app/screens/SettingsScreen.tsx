@@ -1,9 +1,7 @@
 // PlantPal Settings — parchment-themed grouped lists.
-// Subscription card up top (no login/profile), then Identification, Capture,
-// Journal, and About sections. Toggle / detail / chevron rows.
+// Identification, Capture, Journal, and About sections.
 
 import {
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -16,37 +14,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   IconChevronLeft,
   IconChevronRight,
-  IconStar,
 } from "@/components/plantpal/PPIcons"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
 import { BoilerplateConfig } from "@/config/boilerplate.config"
-import { usePurchases } from "@/context/PurchasesContext"
 import { useAppSettings } from "@/context/SettingsContext"
 import type { MainStackScreenProps } from "@/navigators/navigationTypes"
 import { PP_COLORS, PP_FONT } from "@/theme/plantpal"
 
 export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">) {
-  const { isPremium, restorePurchases } = usePurchases()
   const { settings, updateSetting } = useAppSettings()
   const insets = useSafeAreaInsets()
 
-  const handleRestore = async () => {
-    const success = await restorePurchases()
-    Alert.alert(
-      success ? "Restored" : "Nothing to restore",
-      success
-        ? "Your subscription has been restored."
-        : "No active subscription found for this Apple ID.",
-    )
-  }
-
-  const handleManageSubscription = () => {
-    Linking.openURL("https://apps.apple.com/account/subscriptions")
-  }
-
-  const appVersion = Application.nativeApplicationVersion ?? "1.4.0"
-  const buildVersion = Application.nativeBuildVersion ?? "218"
+  const appVersion = Application.nativeApplicationVersion ?? "1.0.0"
+  const buildVersion = Application.nativeBuildVersion ?? "1"
 
   return (
     <Screen
@@ -76,46 +57,6 @@ export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">)
         </View>
 
         <Text style={styles.title}>Settings</Text>
-
-        {/* Subscription */}
-        <SectionHeader>Subscription</SectionHeader>
-        <View style={styles.subCard}>
-          <View style={styles.subGlow} />
-          <View style={styles.subEyebrowRow}>
-            <IconStar size={13} color={PP_COLORS.pollen} />
-            <Text style={styles.subEyebrow}>{isPremium ? "PREMIUM" : "FREE PLAN"}</Text>
-          </View>
-          <Text style={styles.subTitle}>PlantPal Premium</Text>
-          <Text style={styles.subDesc}>
-            Unlimited identifications, deeper field notes, offline mode, and journal export.
-            £24.99/year or £4.99/month.
-          </Text>
-          <View style={styles.subButtonRow}>
-            {isPremium ? (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleManageSubscription}
-                style={styles.subPrimaryBtn}
-              >
-                <Text style={styles.subPrimaryText}>Manage subscription</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => navigation.getParent()?.navigate("Paywall" as never)}
-                style={styles.subPrimaryBtn}
-              >
-                <Text style={styles.subPrimaryText}>Start 7-day free trial</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity activeOpacity={0.85} style={styles.subSecondaryBtn}>
-              <Text style={styles.subSecondaryText}>Compare plans</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={handleRestore} activeOpacity={0.7} hitSlop={8}>
-            <Text style={styles.restoreLink}>Restore purchase</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Identification */}
         <SectionHeader>Identification</SectionHeader>
@@ -173,9 +114,7 @@ export function SettingsScreen({ navigation }: MainStackScreenProps<"Settings">)
         <ListGroup>
           <Row
             label="Send feedback"
-            onPress={() =>
-              Linking.openURL(`mailto:${BoilerplateConfig.app.supportEmail}`)
-            }
+            onPress={() => Linking.openURL(`mailto:${BoilerplateConfig.app.supportEmail}`)}
           />
           <Row
             label="Privacy & data"
@@ -218,41 +157,19 @@ interface RowProps {
   onPress?: () => void
 }
 
-function Row({
-  label,
-  detail,
-  toggle,
-  on,
-  onToggle,
-  chevron = true,
-  last,
-  muted,
-  onPress,
-}: RowProps) {
+function Row({ label, detail, toggle, on, onToggle, chevron = true, last, muted, onPress }: RowProps) {
   const isInteractive = !!(onPress || toggle)
 
   const content = (
     <View
       style={[
         styles.row,
-        !last && {
-          borderBottomWidth: 0.5,
-          borderBottomColor: PP_COLORS.birchHairline,
-        },
+        !last && { borderBottomWidth: 0.5, borderBottomColor: PP_COLORS.birchHairline },
       ]}
     >
-      <Text
-        style={[
-          styles.rowLabel,
-          muted && { color: PP_COLORS.stone },
-        ]}
-      >
-        {label}
-      </Text>
+      <Text style={[styles.rowLabel, muted && { color: PP_COLORS.stone }]}>{label}</Text>
       {detail ? (
-        <Text style={[styles.rowDetail, !chevron && { marginRight: 0 }]}>
-          {detail}
-        </Text>
+        <Text style={[styles.rowDetail, !chevron && { marginRight: 0 }]}>{detail}</Text>
       ) : null}
       {toggle ? (
         <PPToggle on={!!on} onChange={onToggle ?? (() => {})} />
@@ -279,13 +196,7 @@ function Row({
   return content
 }
 
-function PPToggle({
-  on,
-  onChange,
-}: {
-  on: boolean
-  onChange: (value: boolean) => void
-}) {
+function PPToggle({ on, onChange }: { on: boolean; onChange: (value: boolean) => void }) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -295,12 +206,7 @@ function PPToggle({
         { backgroundColor: on ? PP_COLORS.tealDeep : "rgba(140,110,70,0.25)" },
       ]}
     >
-      <View
-        style={[
-          styles.toggleThumb,
-          { left: on ? 20 : 2 },
-        ]}
-      />
+      <View style={[styles.toggleThumb, { left: on ? 20 : 2 }]} />
     </TouchableOpacity>
   )
 }
@@ -377,97 +283,6 @@ const styles = StyleSheet.create({
     color: PP_COLORS.stone,
     marginRight: 6,
   },
-  // Subscription card
-  subCard: {
-    marginHorizontal: 18,
-    marginBottom: 22,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: PP_COLORS.tealDeep,
-    overflow: "hidden",
-    position: "relative",
-  },
-  subGlow: {
-    position: "absolute",
-    right: -30,
-    top: -30,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(168,207,197,0.18)",
-  },
-  subEyebrowRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-  subEyebrow: {
-    fontFamily: PP_FONT.uiMedium,
-    fontSize: 11,
-    color: "rgba(245,237,223,0.85)",
-    letterSpacing: 0.5,
-    marginLeft: 8,
-  },
-  subTitle: {
-    fontFamily: PP_FONT.displayRegular,
-    fontSize: 26,
-    lineHeight: 30,
-    letterSpacing: -0.4,
-    color: PP_COLORS.parchment,
-  },
-  subDesc: {
-    marginTop: 6,
-    fontFamily: PP_FONT.uiRegular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "rgba(245,237,223,0.82)",
-    maxWidth: 260,
-  },
-  subButtonRow: {
-    marginTop: 16,
-    flexDirection: "row",
-    gap: 8,
-  },
-  subPrimaryBtn: {
-    flex: 1,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: PP_COLORS.parchment,
-    alignItems: "center",
-    marginRight: 8,
-  },
-  subPrimaryText: {
-    fontFamily: PP_FONT.uiMedium,
-    fontSize: 13.5,
-    color: PP_COLORS.tealDeep,
-    letterSpacing: 0.1,
-  },
-  subSecondaryBtn: {
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    borderColor: "rgba(245,237,223,0.4)",
-    alignItems: "center",
-  },
-  subSecondaryText: {
-    fontFamily: PP_FONT.uiMedium,
-    fontSize: 13,
-    color: "rgba(245,237,223,0.9)",
-    letterSpacing: 0.1,
-  },
-  restoreLink: {
-    marginTop: 14,
-    fontFamily: PP_FONT.uiMedium,
-    fontSize: 12,
-    color: "rgba(245,237,223,0.65)",
-    letterSpacing: 0.1,
-    textDecorationLine: "underline",
-  },
-  // Toggle
   toggleTrack: {
     width: 44,
     height: 26,
