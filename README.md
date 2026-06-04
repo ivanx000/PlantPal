@@ -1,29 +1,35 @@
 # PlantPal
 
-A beautiful botanical field journal app for discovering, documenting, and organizing plant finds. Capture photos of plants you encounter in nature, add scientific names, filter by category, and maintain a personal collection of your botanical discoveries.
+A botanical field journal for iOS and Android. Photograph plants, identify them with AI, and build a personal collection of your finds.
 
 ## Features
 
-- **Field Journal Dashboard** — View your plant discoveries as polaroid cards with stats tracking (total finds, species count, weekly activity)
-- **Plant Photography** — Capture photos of plants you find with an intuitive camera interface
-- **Categorization** — Organize finds by category (Flowers, Trees, Fungi, Berries)
-- **Scientific Records** — Document each find with common name, Latin name, date, and location
-- **Persistent Storage** — All discoveries are saved locally on your device
-- **Dark Mode Support** — Beautiful dark theme for low-light plant hunting
-- **Multi-language Support** — Available in English, Spanish, French, Arabic, Hindi, Japanese, and Korean
-- **Responsive Design** — Works seamlessly on iOS and Android devices
+- **Plant Identification** — Photograph a plant and get an AI-powered identification via the [PlantNet API](https://plantnet.org), with confidence scoring and alternative matches
+- **Field Journal** — Saved finds displayed as tilted polaroid cards with common name, Latin binomial, and date
+- **Live Stats** — Total finds, unique species count, and weekly activity tracked automatically
+- **Explore** — Browse your sightings chronologically; map view coming in a future release
+- **Discover** — Curated seasonal plant suggestions updated each month (UK flora)
+- **Profile** — Your journal stats and subscription status at a glance
+- **Persistent Storage** — Journal and settings survive app restarts via MMKV
+- **Subscriptions** — Premium tier via RevenueCat (unlimited identifications, deeper field notes, offline mode, journal export)
+- **Onboarding** — Three-slide intro with notification permission request
+- **Multi-language** — i18n scaffolding in EN, ES, FR, AR, HI, JA, KO
 
 ## Tech Stack
 
 | Category | Libraries |
 |---|---|
 | Framework | React Native 0.83.4, Expo 55, TypeScript 5.9 |
-| Navigation | React Navigation 7 (native-stack, bottom-tabs) |
-| State | React Context API + MMKV persistent storage |
-| UI | react-native-reanimated, react-native-gesture-handler, react-native-heroicons |
-| Fonts | Space Grotesk via `@expo-google-fonts/space-grotesk` |
-| Networking | apisauce |
-| i18n | i18next + react-i18next (EN, ES, FR, AR, HI, JA, KO) |
+| Navigation | React Navigation 7 (native-stack + custom floating tab bar) |
+| State | React Context + MMKV persistent storage |
+| Plant ID | [PlantNet API](https://my.plantnet.org) — mock fallback when no key set |
+| Camera | expo-image-picker (camera + photo library) |
+| Subscriptions | react-native-purchases (RevenueCat) |
+| UI | react-native-reanimated, react-native-gesture-handler, react-native-svg |
+| Fonts | Inter · Fraunces · Instrument Serif (via `@expo-google-fonts`) |
+| Networking | apisauce + fetch (PlantNet multipart upload) |
+| Date formatting | date-fns |
+| i18n | i18next + react-i18next |
 | Notifications | expo-notifications |
 | Debugging | Reactotron + MMKV plugin |
 | Testing | Jest, Maestro (E2E) |
@@ -35,97 +41,114 @@ A beautiful botanical field journal app for discovering, documenting, and organi
 
 ```
 app/
-├── screens/          # App screens (Dashboard/Field Journal, Paywall, Settings, Onboarding)
+├── screens/
+│   ├── DashboardScreen.tsx   # Field journal (home)
+│   ├── CameraScreen.tsx      # Photo capture + identification trigger
+│   ├── ResultScreen.tsx      # Identification result + save to journal
+│   ├── ExploreScreen.tsx     # Chronological sightings list
+│   ├── DiscoverScreen.tsx    # Seasonal plant suggestions
+│   ├── ProfileScreen.tsx     # Journal stats + subscription
+│   ├── OnboardingScreen.tsx
+│   ├── PaywallScreen.tsx
+│   └── SettingsScreen.tsx
 ├── components/
-│   ├── plantpal/     # Plant-specific UI components (Polaroid cards, icons)
-│   └── ...           # Shared UI components
-├── context/          # State management (app state, purchases)
-├── navigators/       # Navigation setup and types
-├── theme/            # PlantPal-specific colors, typography, spacing
-├── hooks/            # Custom React hooks
-├── models/           # TypeScript type definitions
-├── services/api/     # API integration
-├── utils/            # Storage, helpers, formatters
-├── i18n/             # Translations (EN, ES, FR, AR, HI, JA, KO)
-└── config/           # Development/production configuration
+│   ├── plantpal/             # Polaroid card, icons, shared TabBar
+│   └── ...                   # Generic UI primitives
+├── context/
+│   ├── JournalContext.tsx    # MMKV-backed find store + stats
+│   ├── SettingsContext.tsx   # MMKV-backed settings (detection, capture prefs)
+│   ├── PurchasesContext.tsx  # RevenueCat subscription state
+│   └── AppStateContext.tsx   # Onboarding completion flag
+├── services/
+│   ├── plantnet/             # PlantNet identification API
+│   └── api/                  # Generic API utilities
+├── navigators/               # Navigation setup and TypeScript types
+├── theme/                    # Colors, typography, PlantPal design constants
+├── models/                   # TypeScript type definitions (PlantFind, etc.)
+├── utils/                    # Storage, date helpers, notifications
+├── i18n/                     # Translations (EN, ES, FR, AR, HI, JA, KO)
+└── config/                   # Dev/prod configuration
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm/yarn
-- Expo CLI
-- Xcode (for iOS) / Android Studio (for Android)
+- Node.js 20+
+- Expo CLI + EAS CLI (`npm i -g expo-cli eas-cli`)
+- Xcode 15+ (iOS) / Android Studio (Android)
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <repo-url>
-   cd PlantPal
-   ```
+```bash
+git clone https://github.com/ivanx000/PlantPal.git
+cd PlantPal
+npm install
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Run in development
 
-3. Start the development server:
-   ```bash
-   npm run start
-   ```
+This project uses `expo-dev-client` (not Expo Go). You need to build the native app once before running JS:
 
-4. Open on iOS or Android:
+```bash
+# Build native dev client (first time, or after adding native dependencies)
+npm run build:ios:sim    # iOS Simulator
+npm run build:android:sim
+
+# Then start the JS bundler
+npm run start
+```
+
+### PlantNet API key (optional)
+
+Without a key the app uses mock identification data so you can develop offline. To use real plant identification:
+
+1. Register for a free key at [my.plantnet.org](https://my.plantnet.org)
+2. Add it to your environment:
    ```bash
-   # iOS
-   npm run ios
-   
-   # Android
-   npm run android
+   export PLANTNET_API_KEY=your-key-here
    ```
+   Or set `PLANTNET_API_KEY` in your EAS build environment variables.
+
+### RevenueCat keys
+
+RevenueCat is pre-wired. To connect to your own dashboard set `REVENUECAT_API_KEY` in your environment, or update `app/config/config.dev.ts` and `config.prod.ts`.
 
 ## Building for Deployment
 
-The project uses EAS (Expo Application Services) for building and distributing. Build profiles are configured in `eas.json`:
-
 ```bash
 # iOS
-npm run build:ios:sim      # simulator
-npm run build:ios:device   # physical device
-npm run build:ios:preview  # TestFlight
-npm run build:ios:prod     # App Store
+npm run build:ios:sim        # Simulator .app
+npm run build:ios:device     # Dev build for physical device
+npm run build:ios:preview    # TestFlight .ipa
+npm run build:ios:prod       # App Store .ipa
 
 # Android
-npm run build:android:sim      # emulator
-npm run build:android:device   # physical device
-npm run build:android:preview  # Google Play internal track
-npm run build:android:prod     # Play Store
+npm run build:android:sim      # Emulator .apk
+npm run build:android:device   # Dev build for physical device
+npm run build:android:preview  # Google Play internal track .aab
+npm run build:android:prod     # Play Store .aab
 ```
-
-**Prerequisites:** EAS CLI (`npm i -g eas-cli`)
 
 ## Development Scripts
 
 ```bash
-npm run compile         # TypeScript type check
-npm run lint            # ESLint (auto-fix)
-npm run lint:check      # ESLint (check only)
+npm run compile         # TypeScript type check (tsc --noEmit)
+npm run lint            # ESLint with auto-fix
+npm run lint:check      # ESLint check only
 npm run test            # Jest unit tests
-npm run test:watch      # Jest in watch mode
-npm run test:maestro    # Maestro E2E tests
+npm run test:watch      # Jest watch mode
+npm run test:maestro    # Maestro E2E flows
 npm run depcruise:graph # Generate dependency graph SVG
 ```
 
 ## Configuration
 
-Key configuration files:
-
 | File | Purpose |
 |---|---|
-| `app/config/config.base.ts` | Base config (nav persistence, error handling) |
-| `app/config/config.dev.ts` | Development API settings |
-| `app/config/config.prod.ts` | Production API settings |
-| `app.json` | Expo app metadata (name, bundle IDs, icons) |
-| `eas.json` | EAS build profiles for iOS and Android |
+| `app/config/config.base.ts` | Base config (navigation persistence, error catching, API keys shape) |
+| `app/config/config.dev.ts` | Dev overrides — reads `REVENUECAT_API_KEY` and `PLANTNET_API_KEY` from env |
+| `app/config/config.prod.ts` | Production overrides |
+| `app.json` | Expo metadata: bundle IDs, icons, splash, permissions |
+| `eas.json` | EAS build profiles |
 
-Customize app identifiers in `app.json` (iOS bundle ID: `com.plantpal.app`, Android package: `com.plantpal.app`)
+**Bundle identifiers:** iOS `com.ivanxie.plantpal` · Android `com.ivanxie.plantpal`
